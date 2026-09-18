@@ -1,0 +1,214 @@
+// InfraNet — modelo de dados
+// Cobre: contas/autenticacao (Prioridade 1) e o nucleo de inventario de rede,
+// testes, BOM (Prioridades 2-4). As tabelas de inventario ja estao modeladas
+// aqui para que o schema nao precise ser redesenhado nas proximas etapas,
+// mas a UI/API dessas partes ainda sera implementada em turnos futuros.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Contas e autenticacao ----------
+
+enum Role {
+  ADMIN
+  TECNICO
+  LEITOR
+}
+
+model User {
+  id                String    @id @default(cuid())
+  firstName         String
+  lastName          String?
+  email             String    @unique
+  passwordHash      String
+  role              Role      @default(LEITOR)
+  emailVerifiedAt   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sessions          Session[]
+  emailVerifications EmailVerification[]
+  passwordResets    PasswordReset[]
+
+  @@map("users")
+}
+
+// Sessao persistente ("lembrar de mim"). O valor exposto ao navegador e um
+// token opaco; aqui guardamos apenas o hash dele, nunca o token em si.
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  tokenHash    String   @unique
+  rememberMe   Boolean  @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  revokedAt    DateTime?
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model EmailVerification {
+  id         String    @id @default(cuid())
+  userId     String
+  codeHash   String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verifications")
+}
+
+model PasswordReset {
+  id         String    @id @default(cuid())
+  userId     String
+  codeHash   String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
+// ---------- Inventario de rede (Prioridade 2 — a implementar) ----------
+
+enum CableCategory {
+  CAT5E
+  CAT6
+  CAT6A
+  FIBRA_OM3
+  FIBRA_OM4
+  FIBRA_OS2
+}
+
+enum TestResult {
+  PASS
+  FAIL
+  PENDENTE
+}
+
+model Rack {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  createdAt DateTime @default(now())
+
+  switches     Switch[]
+  patchPanels  PatchPanel[]
+
+  @@map("racks")
+}
+
+model Switch {
+  id        String   @id @default(cuid())
+  name      String
+  model     String?
+  portCount Int
+  rackId    String?
+  rack      Rack?    @relation(fields: [rackId], references: [id])
+  ports     SwitchPort[]
+
+  @@map("switches")
+}
+
+model SwitchPort {
+  id       String  @id @default(cuid())
+  switchId String
+  number   Int
+  switch   Switch  @relation(fields: [switchId], references: [id], onDelete: Cascade)
+  networkPoint NetworkPoint?
+
+  @@unique([switchId, number])
+  @@map("switch_ports")
+}
+
+model PatchPanel {
+  id        String   @id @default(cuid())
+  name      String
+  portCount Int
+  rackId    String?
+  rack      Rack?    @relation(fields: [rackId], references: [id])
+  ports     PatchPanelPort[]
+
+  @@map("patch_panels")
+}
+
+model PatchPanelPort {
+  id           String     @id @default(cuid())
+  patchPanelId String
+  number       Int
+  patchPanel   PatchPanel @relation(fields: [patchPanelId], references: [id], onDelete: Cascade)
+  networkPoint NetworkPoint?
+
+  @@unique([patchPanelId, number])
+  @@map("patch_panel_ports")
+}
+
+model NetworkPoint {
+  id               String        @id @default(cuid())
+  code             String        @unique // identificador impresso na etiqueta
+  location         String
+  cableCategory    CableCategory
+  patchPanelPortId String?       @unique
+  switchPortId     String?       @unique
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  patchPanelPort   PatchPanelPort? @relation(fields: [patchPanelPortId], references: [id])
+  switchPort       SwitchPort?     @relation(fields: [switchPortId], references: [id])
+  certifications   CertificationTest[]
+
+  @@map("network_points")
+}
+
+model CertificationTest {
+  id             String       @id @default(cuid())
+  networkPointId String
+  result         TestResult   @default(PENDENTE)
+  performedAt    DateTime     @default(now())
+  performedBy    String?
+  notes          String?
+
+  networkPoint   NetworkPoint @relation(fields: [networkPointId], references: [id], onDelete: Cascade)
+
+  @@index([networkPointId])
+  @@map("certification_tests")
+}
+
+// ---------- BOM — lista de materiais (Prioridade 4 — a implementar) ----------
+
+model BomItem {
+  id            String   @id @default(cuid())
+  name          String
+  unit          String
+  quantity      Float
+  estimatedCost Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("bom_items")
+}
+
+model BomSettings {
+  id            String @id @default(cuid())
+  marginPercent Float  @default(0)
+
+  @@map("bom_settings")
+}
+
