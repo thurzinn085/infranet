@@ -55,7 +55,7 @@ export default function RegisterForm() {
         return;
       }
 
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      router.push("/login");
     } catch {
       setError("Falha de conexao. Tente novamente.");
     } finally {

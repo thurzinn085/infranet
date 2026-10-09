@@ -24,13 +24,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(genericError, { status: 401 });
   }
 
-  if (!user.emailVerifiedAt) {
-    return NextResponse.json(
-      { error: "Confirme seu e-mail antes de entrar.", needsVerification: true, email: user.email },
-      { status: 403 }
-    );
-  }
-
   await createSession(user.id, rememberMe);
 
   return NextResponse.json({

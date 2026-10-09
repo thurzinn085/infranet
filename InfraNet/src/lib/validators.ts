@@ -26,11 +26,6 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().optional().default(false),
 });
 
-export const verifyEmailSchema = z.object({
-  email: z.string().trim().email(),
-  code: z.string().length(6, "O codigo deve ter 6 digitos."),
-});
-
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Informe um e-mail valido."),
 });

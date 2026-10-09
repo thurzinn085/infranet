@@ -1,8 +1,4 @@
-// InfraNet — modelo de dados
-// Cobre: contas/autenticacao (Prioridade 1) e o nucleo de inventario de rede,
-// testes, BOM (Prioridades 2-4). As tabelas de inventario ja estao modeladas
-// aqui para que o schema nao precise ser redesenhado nas proximas etapas,
-// mas a UI/API dessas partes ainda sera implementada em turnos futuros.
+
 
 generator client {
   provider = "prisma-client-js"
@@ -12,8 +8,6 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// ---------- Contas e autenticacao ----------
 
 enum Role {
   ADMIN
@@ -28,19 +22,16 @@ model User {
   email             String    @unique
   passwordHash      String
   role              Role      @default(LEITOR)
-  emailVerifiedAt   DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   sessions          Session[]
-  emailVerifications EmailVerification[]
   passwordResets    PasswordReset[]
 
   @@map("users")
 }
 
-// Sessao persistente ("lembrar de mim"). O valor exposto ao navegador e um
-// token opaco; aqui guardamos apenas o hash dele, nunca o token em si.
+
 model Session {
   id           String   @id @default(cuid())
   userId       String
@@ -54,21 +45,6 @@ model Session {
 
   @@index([userId])
   @@map("sessions")
-}
-
-model EmailVerification {
-  id         String    @id @default(cuid())
-  userId     String
-  codeHash   String
-  expiresAt  DateTime
-  usedAt     DateTime?
-  attempts   Int       @default(0)
-  createdAt  DateTime  @default(now())
-
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("email_verifications")
 }
 
 model PasswordReset {
@@ -211,4 +187,3 @@ model BomSettings {
 
   @@map("bom_settings")
 }
-

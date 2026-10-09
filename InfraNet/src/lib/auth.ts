@@ -27,7 +27,6 @@ export type SessionUser = {
   lastName: string | null;
   email: string;
   role: Role;
-  emailVerifiedAt: Date | null;
 };
 
 // Cria uma sessao no banco (guardando so o hash do token) e devolve o token
@@ -113,7 +112,6 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      emailVerifiedAt: user.emailVerifiedAt,
     };
   } catch {
     // Token invalido ou expirado — trata como "nao autenticado" em vez de

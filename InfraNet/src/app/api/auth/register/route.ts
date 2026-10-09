@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { registerSchema } from "@/lib/validators";
-import { hashPassword, generateNumericCode, hashCode } from "@/lib/password";
-import { sendVerificationEmail } from "@/lib/email";
+import { hashPassword } from "@/lib/password";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -10,7 +9,7 @@ export async function POST(req: NextRequest) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Dados invalidos.", issues: parsed.error.flatten() },
+      { error: "Dados inválidos.", issues: parsed.error.flatten() },
       { status: 400 }
     );
   }
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json(
-      { error: "Ja existe uma conta cadastrada com este e-mail." },
+      { error: "Já existe uma conta cadastrada com este e-mail." },
       { status: 409 }
     );
   }
@@ -33,21 +32,11 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await hashPassword(password);
 
-  const user = await db.user.create({
+  await db.user.create({
     data: { firstName, lastName, email, passwordHash, role },
   });
 
-  const code = generateNumericCode();
-  const codeHash = await hashCode(code);
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-
-  await db.emailVerification.create({
-    data: { userId: user.id, codeHash, expiresAt },
-  });
-
-  await sendVerificationEmail(user.email, user.firstName, code);
-
   return NextResponse.json({
-    message: "Conta criada. Enviamos um codigo de confirmacao para o seu e-mail.",
+    message: "Conta criada com sucesso.",
   });
 }

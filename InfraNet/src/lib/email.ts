@@ -20,17 +20,6 @@ async function send(to: string, subject: string, html: string) {
   });
 }
 
-export async function sendVerificationEmail(to: string, firstName: string, code: string) {
-  await send(
-    to,
-    "Confirme seu e-mail — InfraNet",
-    `<p>Ola, ${firstName}.</p>
-     <p>Use o codigo abaixo para confirmar seu e-mail no InfraNet:</p>
-     <p style="font-size:24px;font-weight:600;letter-spacing:4px;">${code}</p>
-     <p>Este codigo expira em 30 minutos. Se voce nao criou uma conta, ignore esta mensagem.</p>`
-  );
-}
-
 export async function sendPasswordResetEmail(to: string, firstName: string, code: string) {
   await send(
     to,

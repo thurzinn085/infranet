@@ -29,7 +29,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-// Codigos numericos de 6 digitos para confirmacao de e-mail / recuperacao de senha.
+// Codigos numericos de 6 digitos para recuperacao de senha.
 export function generateNumericCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }

@@ -1,13 +1,13 @@
 # InfraNet
 
 Sistema de gestao da infraestrutura de rede estruturada — site e PWA no mesmo
-projeto (Next.js), com autenticacao completa (login, cadastro, confirmacao de
-e-mail, recuperacao de senha, sessao persistente "lembrar de mim").
+projeto (Next.js), com autenticacao completa (login, cadastro, recuperacao
+de senha, sessao persistente "lembrar de mim").
 
 ## Status atual (Prioridade 1 concluida)
 
-- Login, cadastro, confirmacao de e-mail por codigo, recuperacao de senha por
-  codigo, sessao com "lembrar de mim", primeira conta = Administrador
+- Login, cadastro sem confirmacao por e-mail, recuperacao de senha por codigo,
+  sessao com "lembrar de mim", primeira conta = Administrador
   (decidido no backend), mostrar/ocultar senha, PWA instalavel (manifest +
   service worker).
 - Ainda **nao** implementado (proximos turnos, seguindo a Prioridade 2-5 da
@@ -24,9 +24,9 @@ e-mail, recuperacao de senha, sessao persistente "lembrar de mim").
   projeto (API Routes), o que atende ao requisito de site e PWA serem a
   mesma aplicacao.
 - **Prisma** + **PostgreSQL** — banco de dados e modelos.
-- **bcryptjs** — hash de senhas e de codigos de verificacao.
+- **bcryptjs** — hash de senhas e de codigos de recuperacao.
 - **jose** — assinatura dos tokens de sessao (JWT).
-- **Resend** — envio de e-mails (confirmacao de cadastro e recuperacao de senha).
+- **Resend** — envio de e-mails de recuperacao de senha.
 - **Tailwind CSS** — estilos.
 - **zod** — validacao de formularios no frontend e no backend.
 
@@ -42,8 +42,8 @@ npm run dev
 Acesse `http://localhost:3000`. A primeira conta criada em `/register` recebe
 automaticamente o papel de Administrador.
 
-Se `RESEND_API_KEY` nao estiver configurada, os e-mails de confirmacao e
-recuperacao sao apenas registrados no console do servidor (util para testar
+Se `RESEND_API_KEY` nao estiver configurada, os e-mails de recuperacao sao
+apenas registrados no console do servidor (util para testar
 localmente sem uma conta de e-mail configurada) — o codigo aparece no
 terminal onde `npm run dev` esta rodando.
 
@@ -62,8 +62,8 @@ terminal onde `npm run dev` esta rodando.
   gratuito que dorme apos inatividade".
 - **Neon** oferece PostgreSQL serverless com plano gratuito permanente,
   compativel com Prisma, e nao exige um servidor sempre ligado.
-- **Resend** tem um plano gratuito com volume suficiente para confirmacao de
-  cadastro e recuperacao de senha em um projeto deste porte.
+- **Resend** tem um plano gratuito com volume suficiente para recuperacao
+  de senha em um projeto deste porte.
 
 Essa combinacao foi escolhida sem exigir mudancas na arquitetura: por ser
 Next.js full-stack, o mesmo codigo roda em dev e em producao.

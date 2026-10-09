@@ -30,10 +30,6 @@ export default function LoginForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.needsVerification) {
-          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
-          return;
-        }
         setError(data.error ?? "Nao foi possivel entrar.");
         return;
       }
