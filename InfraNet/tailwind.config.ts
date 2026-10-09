@@ -6,20 +6,20 @@ const config: Config = {
     extend: {
       colors: {
         ink: {
-          900: "#0d1117",
-          700: "#1f2a33",
-          500: "#46515d",
-          300: "#8692a0",
-          100: "#dfe6ee",
+          900: "#171717",
+          700: "#404040",
+          500: "#737373",
+          300: "#a3a3a3",
+          100: "#e5e5e5",
         },
         brand: {
-          600: "#173ea8",
-          700: "#102d7a",
-          50: "#e7edff",
+          600: "#404040",
+          700: "#262626",
+          50: "#f5f5f5",
         },
-        line: "#d9dee6",
-        danger: "#a62d2d",
-        success: "#136a4a",
+        line: "#d4d4d4",
+        danger: "#262626",
+        success: "#525252",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

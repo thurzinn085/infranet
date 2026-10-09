@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-ink-100">
       <header className="flex items-center justify-between border-b border-line px-6 py-4">
         <p className="font-semibold text-ink-900">InfraNet</p>
         <form action={logout}>

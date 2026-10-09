@@ -8,7 +8,7 @@ export default function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink-100/40 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-ink-100/70 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
           <p className="text-lg font-semibold tracking-tight text-ink-900">InfraNet</p>

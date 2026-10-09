@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111418",
+  themeColor: "#262626",
   width: "device-width",
   initialScale: 1,
 };
@@ -21,7 +21,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-white text-ink-900 antialiased">
+      <body className="bg-ink-100 text-ink-900 antialiased">
         {children}
         <script
           dangerouslySetInnerHTML={{
