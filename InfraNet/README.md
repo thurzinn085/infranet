@@ -12,9 +12,10 @@ de senha, sessao persistente "lembrar de mim").
   service worker).
 - Ainda **nao** implementado (proximos turnos, seguindo a Prioridade 2-5 da
   especificacao): inventario de rede (pontos, patch panels, switches,
-  cabos), geracao de etiquetas, registro de testes PASS/FAIL, dashboard de
-  metricas, BOM/custos, central de ajuda. O schema do banco (`prisma/schema.prisma`)
-  ja modela essas tabelas para nao exigir retrabalho depois.
+  cabos), geracao de etiquetas, registro de testes PASS/FAIL, metricas
+  detalhadas, BOM/custos, central de ajuda. O painel inicial mostra contagens
+  do inventario, certificacoes e itens da BOM. O schema do banco
+  (`prisma/schema.prisma`) ja modela essas tabelas para nao exigir retrabalho.
 - Icones do PWA (`public/icons/icon-192.png`, `icon-512.png`) sao referencias
   no manifest mas os arquivos de imagem ainda precisam ser gerados/adicionados.
 
