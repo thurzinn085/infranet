@@ -16,8 +16,8 @@ export default function Button({
   const base =
     "h-11 rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60";
   const variants = {
-    primary: "bg-brand-600 text-white hover:bg-brand-700",
-    secondary: "border border-line text-ink-700 hover:bg-ink-100",
+    primary: "bg-neutral-100 text-neutral-900 hover:bg-neutral-300",
+    secondary: "border border-neutral-700 text-neutral-200 hover:bg-neutral-800",
   };
 
   return (

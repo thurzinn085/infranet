@@ -11,7 +11,7 @@ import { checkPasswordRules } from "@/lib/password";
 
 function RuleItem({ met, label }: { met: boolean; label: string }) {
   return (
-    <li className={`flex items-center gap-1.5 text-xs ${met ? "text-success" : "text-ink-500"}`}>
+    <li className={`flex items-center gap-1.5 text-xs ${met ? "text-green-300" : "text-neutral-400"}`}>
       <span
         className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
           met ? "border-success bg-success text-white" : "border-ink-300"
@@ -123,9 +123,9 @@ export default function RegisterForm() {
         Criar conta
       </Button>
 
-      <p className="text-center text-sm text-ink-500">
+      <p className="text-center text-sm text-neutral-400">
         Ja tem uma conta?{" "}
-        <Link href="/login" className="font-medium text-brand-600 hover:underline">
+        <Link href="/login" className="font-medium text-neutral-200 hover:text-white hover:underline">
           Entrar
         </Link>
       </p>

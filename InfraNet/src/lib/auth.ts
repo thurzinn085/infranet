@@ -21,6 +21,16 @@ function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
+function splitSessionCookie(value: string) {
+  const separator = value.lastIndexOf(".");
+  if (separator <= 0 || separator === value.length - 1) return null;
+
+  return {
+    jwt: value.slice(0, separator),
+    rawToken: value.slice(separator + 1),
+  };
+}
+
 export type SessionUser = {
   id: string;
   firstName: string;
@@ -70,9 +80,9 @@ export async function createSession(userId: string, rememberMe: boolean) {
 export async function destroyCurrentSession() {
   const raw = cookies().get(COOKIE_NAME)?.value;
   if (raw) {
-    const [, rawToken] = raw.split(".");
-    if (rawToken) {
-      const tokenHash = hashToken(rawToken);
+    const parsed = splitSessionCookie(raw);
+    if (parsed) {
+      const tokenHash = hashToken(parsed.rawToken);
       await db.session.updateMany({
         where: { tokenHash },
         data: { revokedAt: new Date() },
@@ -87,12 +97,13 @@ export async function destroyCurrentSession() {
 // foi revogada. Retorna o usuario autenticado ou null.
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const raw = cookies().get(COOKIE_NAME)?.value;
-  if (!raw || !raw.includes(".")) return null;
+  if (!raw) return null;
 
-  const [jwt, rawToken] = raw.split(".");
+  const parsed = splitSessionCookie(raw);
+  if (!parsed) return null;
 
   try {
-    const { payload } = await jwtVerify(jwt, getSecret());
+    const { payload } = await jwtVerify(parsed.jwt, getSecret());
     const sessionId = payload.sid as string;
 
     const session = await db.session.findUnique({
@@ -103,7 +114,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     if (!session) return null;
     if (session.revokedAt) return null;
     if (session.expiresAt < new Date()) return null;
-    if (session.tokenHash !== hashToken(rawToken)) return null;
+    if (session.tokenHash !== hashToken(parsed.rawToken)) return null;
 
     const { user } = session;
     return {

@@ -80,10 +80,10 @@ export default function ResetPasswordForm({ initialEmail }: { initialEmail: stri
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <ul className="mt-2 flex flex-col gap-1 text-xs text-ink-500">
-          <li className={rules.minLength ? "text-success" : ""}>Pelo menos 6 caracteres</li>
-          <li className={rules.hasUppercase ? "text-success" : ""}>Pelo menos 1 letra maiuscula</li>
-          <li className={rules.hasNumber ? "text-success" : ""}>Pelo menos 1 numero</li>
+        <ul className="mt-2 flex flex-col gap-1 text-xs text-neutral-400">
+          <li className={rules.minLength ? "text-green-300" : ""}>Pelo menos 6 caracteres</li>
+          <li className={rules.hasUppercase ? "text-green-300" : ""}>Pelo menos 1 letra maiuscula</li>
+          <li className={rules.hasNumber ? "text-green-300" : ""}>Pelo menos 1 numero</li>
         </ul>
       </div>
 

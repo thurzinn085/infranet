@@ -49,8 +49,8 @@ export default function ForgotPasswordForm() {
         Enviar codigo de recuperacao
       </Button>
 
-      <p className="text-center text-sm text-ink-500">
-        <Link href="/login" className="font-medium text-brand-600 hover:underline">
+      <p className="text-center text-sm text-neutral-400">
+        <Link href="/login" className="font-medium text-neutral-200 hover:text-white hover:underline">
           Voltar para o login
         </Link>
       </p>

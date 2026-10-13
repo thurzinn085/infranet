@@ -28,33 +28,33 @@ const PasswordField = forwardRef<HTMLInputElement, Props>(
 
     return (
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={fieldId} className="text-sm font-medium text-ink-700">
+        <label htmlFor={fieldId} className="text-sm font-medium text-neutral-200">
           {label}
         </label>
         <div
           className={`flex h-11 items-center rounded-md border pr-2 transition-colors
-            focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-50
-            ${error ? "border-danger" : "border-line"}`}
+            bg-neutral-950 focus-within:border-neutral-400 focus-within:ring-2 focus-within:ring-neutral-400/20
+            ${error ? "border-red-400" : "border-neutral-700"}`}
         >
           <input
             ref={ref}
             id={fieldId}
             type={visible ? "text" : "password"}
-            className="h-full w-full rounded-md bg-transparent px-3 text-sm text-ink-900 placeholder:text-ink-300 outline-none"
+            className="h-full w-full rounded-md bg-transparent px-3 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none"
             aria-invalid={!!error}
             {...props}
           />
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-ink-500 hover:bg-ink-100"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800"
             aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
             tabIndex={-1}
           >
             <EyeIcon open={visible} />
           </button>
         </div>
-        {error && <p className="text-xs text-danger">{error}</p>}
+        {error && <p className="text-xs text-red-300">{error}</p>}
       </div>
     );
   }

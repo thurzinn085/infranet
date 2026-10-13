@@ -68,16 +68,16 @@ export default function LoginForm() {
       />
 
       <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-sm text-ink-700">
+        <label className="flex items-center gap-2 text-sm text-neutral-300">
           <input
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded border-line text-brand-600 focus:ring-brand-600"
+            className="h-4 w-4 rounded border-neutral-600 bg-neutral-950 text-neutral-100 focus:ring-neutral-400"
           />
           Lembrar de mim
         </label>
-        <Link href="/forgot-password" className="text-sm text-brand-600 hover:underline">
+        <Link href="/forgot-password" className="text-sm text-neutral-200 hover:text-white hover:underline">
           Esqueci minha senha
         </Link>
       </div>
@@ -86,9 +86,9 @@ export default function LoginForm() {
         Entrar
       </Button>
 
-      <p className="text-center text-sm text-ink-500">
+      <p className="text-center text-sm text-neutral-400">
         Nao tem uma conta?{" "}
-        <Link href="/register" className="font-medium text-brand-600 hover:underline">
+        <Link href="/register" className="font-medium text-neutral-200 hover:text-white hover:underline">
           Criar conta
         </Link>
       </p>
