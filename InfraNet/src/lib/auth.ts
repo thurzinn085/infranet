@@ -36,8 +36,12 @@ export type SessionUser = {
   firstName: string;
   lastName: string | null;
   email: string;
-  role: Role;
+  role: "ADMIN" | "USER";
 };
+
+export function normalizeRole(role: Role): "ADMIN" | "USER" {
+  return role === "ADMIN" ? "ADMIN" : "USER";
+}
 
 // Cria uma sessao no banco (guardando so o hash do token) e devolve o token
 // opaco que sera colocado no cookie. O JWT carrega apenas o id da sessao,
@@ -122,7 +126,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      role: user.role,
+      role: normalizeRole(user.role),
     };
   } catch {
     // Token invalido ou expirado — trata como "nao autenticado" em vez de

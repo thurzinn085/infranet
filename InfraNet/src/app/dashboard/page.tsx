@@ -76,7 +76,15 @@ export default async function DashboardPage() {
               Olá, {user.firstName}.
             </h1>
           </div>
-          <p className="text-sm text-ink-500">Resumo da infraestrutura de rede</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-ink-500">Resumo da infraestrutura de rede</p>
+            <Link
+              href="/admin"
+              className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-ink-900"
+            >
+              {user.role === "ADMIN" ? "Administração" : "Minha infraestrutura"}
+            </Link>
+          </div>
         </div>
 
         {!hasData && (

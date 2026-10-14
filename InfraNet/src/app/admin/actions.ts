@@ -97,7 +97,7 @@ const userFields = z.object({
   firstName: nameSchema,
   lastName: z.string().trim().max(120).transform((value) => value || null),
   email: z.string().trim().email().transform((value) => value.toLowerCase()),
-  role: z.nativeEnum(Role),
+  role: z.enum(["ADMIN", "USER"]),
 });
 
 export async function createUser(formData: FormData) {
@@ -112,7 +112,9 @@ export async function createUser(formData: FormData) {
     report("error", "Já existe uma conta cadastrada com este e-mail.");
   }
   const passwordHash = await hashPassword(password);
-  await db.user.create({ data: { firstName, lastName, email, role, passwordHash } });
+  await db.user.create({
+    data: { firstName, lastName, email, role: role === "ADMIN" ? Role.ADMIN : Role.LEITOR, passwordHash },
+  });
   refreshAdmin("Usuário criado.");
 }
 
@@ -135,7 +137,10 @@ export async function updateUser(formData: FormData) {
       const admins = await tx.user.count({ where: { role: Role.ADMIN } });
       if (admins <= 1) return "Não é possível remover o último administrador.";
     }
-    await tx.user.update({ where: { id }, data: { firstName, lastName, email, role } });
+    await tx.user.update({
+      where: { id },
+      data: { firstName, lastName, email, role: role === "ADMIN" ? Role.ADMIN : Role.LEITOR },
+    });
     return null;
   }, { isolationLevel: "Serializable" });
   if (error) report("error", error);

@@ -1,6 +1,6 @@
 import { CableCategory, Role, TestResult } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, normalizeRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import ConfirmButton from "./ConfirmButton";
 import {
@@ -117,7 +117,7 @@ export default async function AdminPage({
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
                   <span>
                     <span className="block font-medium text-ink-900">{account.firstName} {account.lastName}</span>
-                    <span className="text-sm text-ink-500">{account.email} · {roleLabel(account.role)}</span>
+                    <span className="text-sm text-ink-500">{account.email} · {roleLabel(normalizeRole(account.role))}</span>
                   </span>
                   <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
                 </summary>
@@ -127,7 +127,7 @@ export default async function AdminPage({
                     <Field name="firstName" label="Nome" defaultValue={account.firstName} required />
                     <Field name="lastName" label="Sobrenome" defaultValue={account.lastName ?? ""} />
                     <Field name="email" label="E-mail" type="email" defaultValue={account.email} required />
-                    <RoleSelect defaultValue={account.role} />
+                    <RoleSelect defaultValue={normalizeRole(account.role)} />
                     <button className={buttonClass}>Salvar usuário</button>
                   </form>
                   <div className="flex flex-wrap items-end gap-2">
@@ -397,7 +397,7 @@ function SelectField({
   );
 }
 
-function RoleSelect({ defaultValue = "USER" }: { defaultValue?: Role }) {
+function RoleSelect({ defaultValue = "USER" }: { defaultValue?: "ADMIN" | "USER" }) {
   return (
     <SelectField name="role" label="Perfil" defaultValue={defaultValue}>
       <option value="ADMIN">Administrador</option>
@@ -406,8 +406,8 @@ function RoleSelect({ defaultValue = "USER" }: { defaultValue?: Role }) {
   );
 }
 
-function roleLabel(role: Role) {
-  if (role === Role.ADMIN) return "Administrador";
+function roleLabel(role: "ADMIN" | "USER") {
+  if (role === "ADMIN") return "Administrador";
   return "Usuário";
 }
 

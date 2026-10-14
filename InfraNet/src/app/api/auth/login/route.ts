@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/validators";
 import { verifyPassword } from "@/lib/password";
-import { createSession } from "@/lib/auth";
+import { createSession, normalizeRole } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const parsed = loginSchema.safeParse(await req.json());
@@ -28,6 +28,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     message: "Login realizado com sucesso.",
-    user: { id: user.id, firstName: user.firstName, role: user.role },
+    user: { id: user.id, firstName: user.firstName, role: normalizeRole(user.role) },
   });
 }

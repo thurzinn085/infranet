@@ -101,22 +101,19 @@ automatico na Vercel. Alteracoes no `schema.prisma` exigem rodar
 `npx prisma db push` (ou `migrate deploy`) apontando para o banco de producao
 antes ou logo apos o deploy.
 
-Ao atualizar um banco que ja possui contas com os perfis antigos, converta
-esses perfis antes do `db push` (mantenha `ADMIN`; os perfis antigos passam a
-ser `USER`). Execute e confirme o primeiro comando antes do segundo:
-
-```sql
-ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'USER';
-```
-
-```sql
-UPDATE users SET role = 'USER' WHERE role IN ('TECNICO', 'LEITOR');
-```
+Contas com os perfis antigos (`TECNICO` e `LEITOR`) continuam podendo entrar e
+são apresentadas como Usuário. Novas contas comuns continuam usando o valor
+legado `LEITOR` no banco; assim, a mudança para dois perfis na interface não
+exige uma conversão destrutiva do enum de PostgreSQL. Para esse comportamento
+funcionar, mantenha esses valores antigos no enum `Role`.
 
 As novas colunas de proprietário são opcionais para preservar os registros de
 infraestrutura existentes. Esses registros antigos permanecem visíveis aos
 administradores; a partir da atualização, os novos registros ficam associados
 à conta que os criou e usuários comuns só veem e alteram os próprios dados.
+Depois de publicar uma versão que altera o `schema.prisma`, execute `npm run
+db:push` com `DATABASE_URL` apontando para o banco usado pela aplicação; sem
+isso, o banco não terá as colunas de proprietário necessárias ao painel.
 
 ### Verificando se esta no ar
 
