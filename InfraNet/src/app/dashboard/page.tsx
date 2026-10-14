@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser, destroyCurrentSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -89,11 +90,11 @@ export default async function DashboardPage() {
         )}
 
         <section aria-label="Inventário" className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <MetricCard label="Pontos de rede" value={networkPoints} />
-          <MetricCard label="Racks" value={racks} />
-          <MetricCard label="Switches" value={switches} />
-          <MetricCard label="Patch panels" value={patchPanels} />
-          <MetricCard label="Itens na BOM" value={bomItems} />
+          <MetricCard label="Pontos de rede" value={networkPoints} href={user.role === "ADMIN" ? "/admin#network-points" : undefined} />
+          <MetricCard label="Racks" value={racks} href={user.role === "ADMIN" ? "/admin#racks" : undefined} />
+          <MetricCard label="Switches" value={switches} href={user.role === "ADMIN" ? "/admin#switches" : undefined} />
+          <MetricCard label="Patch panels" value={patchPanels} href={user.role === "ADMIN" ? "/admin#patch-panels" : undefined} />
+          <MetricCard label="Itens na BOM" value={bomItems} href={user.role === "ADMIN" ? "/admin#bom" : undefined} />
         </section>
 
         <section aria-labelledby="certifications-heading" className="mt-10">
@@ -104,9 +105,9 @@ export default async function DashboardPage() {
             <p className="text-sm text-ink-500">{totalTests} no total</p>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <MetricCard label="Aprovados" value={passedTests} />
-            <MetricCard label="Pendentes" value={pendingTests} />
-            <MetricCard label="Reprovados" value={failedTests} />
+            <MetricCard label="Aprovados" value={passedTests} href={user.role === "ADMIN" ? "/admin#certifications" : undefined} />
+            <MetricCard label="Pendentes" value={pendingTests} href={user.role === "ADMIN" ? "/admin#certifications" : undefined} />
+            <MetricCard label="Reprovados" value={failedTests} href={user.role === "ADMIN" ? "/admin#certifications" : undefined} />
           </div>
         </section>
       </main>
@@ -114,13 +115,23 @@ export default async function DashboardPage() {
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: number }) {
-  return (
+function MetricCard({ label, value, href }: { label: string; value: number; href?: string }) {
+  const card = (
     <article className="rounded-lg border border-line bg-white p-5 shadow-card">
-      <p className="text-sm text-ink-500">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-ink-500">{label}</p>
+        {href && <span aria-hidden="true" className="text-ink-500">›</span>}
+      </div>
       <p className="mt-2 text-3xl font-semibold text-ink-900">
         {value.toLocaleString("pt-BR")}
       </p>
+      {href && <p className="mt-2 text-xs font-medium text-ink-500">Ver e gerenciar</p>}
     </article>
   );
+
+  return href ? (
+    <Link href={href} className="rounded-lg transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ink-500">
+      {card}
+    </Link>
+  ) : card;
 }

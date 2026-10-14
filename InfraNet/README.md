@@ -15,6 +15,8 @@ de senha, sessao persistente "lembrar de mim").
   pontos de rede, certificacoes e itens/configuracao da BOM pela opcao
   "Administracao" no menu de tres pontos do painel. Esse atalho aparece apenas
   para administradores, e a rota `/admin` tambem valida o perfil no servidor.
+  Os cartoes do painel levam os administradores diretamente a cada secao; na
+  lista, cada registro pode ser aberto para editar ou excluir.
 - Ainda **nao** implementado (proximos turnos, seguindo a Prioridade 2-5 da
   especificacao): geracao de etiquetas, metricas detalhadas e central de ajuda.
   O painel inicial mostra contagens do inventario, certificacoes e itens da

@@ -104,32 +104,41 @@ export default async function AdminPage({
           </form>
           <div className="mt-4 space-y-3">
             {users.map((account) => (
-              <div key={account.id} className="grid gap-2 rounded-md border border-line p-3">
-                <form action={updateUser} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                  <input type="hidden" name="id" value={account.id} />
-                  <Field name="firstName" label="Nome" defaultValue={account.firstName} required />
-                  <Field name="lastName" label="Sobrenome" defaultValue={account.lastName ?? ""} />
-                  <Field name="email" label="E-mail" type="email" defaultValue={account.email} required />
-                  <RoleSelect defaultValue={account.role} />
-                  <button className={buttonClass}>Salvar usuário</button>
-                </form>
-                <div className="flex flex-wrap items-end gap-2">
-                  <form action={resetUserPassword} className="flex flex-wrap items-end gap-2">
+              <details key={account.id} className="rounded-md border border-line p-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                  <span>
+                    <span className="block font-medium text-ink-900">{account.firstName} {account.lastName}</span>
+                    <span className="text-sm text-ink-500">{account.email} · {roleLabel(account.role)}</span>
+                  </span>
+                  <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
+                </summary>
+                <div className="mt-4 space-y-3 border-t border-line pt-4">
+                  <form action={updateUser} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     <input type="hidden" name="id" value={account.id} />
-                    <Field name="password" label="Definir nova senha" type="password" required />
-                    <button className={buttonClass}>Alterar senha</button>
+                    <Field name="firstName" label="Nome" defaultValue={account.firstName} required />
+                    <Field name="lastName" label="Sobrenome" defaultValue={account.lastName ?? ""} />
+                    <Field name="email" label="E-mail" type="email" defaultValue={account.email} required />
+                    <RoleSelect defaultValue={account.role} />
+                    <button className={buttonClass}>Salvar usuário</button>
                   </form>
-                  <form action={deleteUser}>
-                  <input type="hidden" name="id" value={account.id} />
-                  <ConfirmButton message={`Excluir a conta ${account.email}?`}>Excluir</ConfirmButton>
-                  </form>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <form action={resetUserPassword} className="flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="id" value={account.id} />
+                      <Field name="password" label="Definir nova senha" type="password" required />
+                      <button className={buttonClass}>Alterar senha</button>
+                    </form>
+                    <form action={deleteUser}>
+                      <input type="hidden" name="id" value={account.id} />
+                      <ConfirmButton message={`Excluir a conta ${account.email}?`}>Excluir</ConfirmButton>
+                    </form>
+                  </div>
                 </div>
-              </div>
+              </details>
             ))}
           </div>
         </Section>
 
-        <Section title={`Racks (${racks.length})`} description="Cadastre locais e agrupe switches e patch panels.">
+        <Section id="racks" title={`Racks (${racks.length})`} description="Cadastre locais e agrupe switches e patch panels.">
           <form action={createRack} className="grid gap-3 sm:grid-cols-3">
             <Field name="name" label="Nome do rack" required />
             <Field name="location" label="Localização" />
@@ -137,24 +146,34 @@ export default async function AdminPage({
           </form>
           <div className="mt-4 space-y-2">
             {racks.map((rack) => (
-              <div key={rack.id} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
-                <form action={updateRack} className="contents">
-                  <input type="hidden" name="id" value={rack.id} />
-                  <Field name="name" label="Nome" defaultValue={rack.name} required />
-                  <Field name="location" label="Localização" defaultValue={rack.location ?? ""} />
-                  <button className={buttonClass}>Salvar</button>
-                </form>
-                <form action={deleteRack}>
-                  <input type="hidden" name="id" value={rack.id} />
-                  <ConfirmButton message={`Excluir o rack ${rack.name}?`}>Excluir</ConfirmButton>
-                </form>
-              </div>
+              <details key={rack.id} className="rounded-md border border-line p-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                  <span>
+                    <span className="block font-medium text-ink-900">{rack.name}</span>
+                    <span className="text-sm text-ink-500">{rack.location || "Localização não informada"}</span>
+                  </span>
+                  <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
+                </summary>
+                <div className="mt-4 grid gap-2 border-t border-line pt-4 sm:grid-cols-[1fr_1fr_auto_auto]">
+                  <form action={updateRack} className="contents">
+                    <input type="hidden" name="id" value={rack.id} />
+                    <Field name="name" label="Nome" defaultValue={rack.name} required />
+                    <Field name="location" label="Localização" defaultValue={rack.location ?? ""} />
+                    <button className={buttonClass}>Salvar</button>
+                  </form>
+                  <form action={deleteRack}>
+                    <input type="hidden" name="id" value={rack.id} />
+                    <ConfirmButton message={`Excluir o rack ${rack.name}?`}>Excluir</ConfirmButton>
+                  </form>
+                </div>
+              </details>
             ))}
           </div>
         </Section>
 
         <DeviceSection
           title={`Switches (${switches.length})`}
+          id="switches"
           action={createSwitch}
           updateAction={updateSwitch}
           deleteAction={deleteSwitch}
@@ -164,6 +183,7 @@ export default async function AdminPage({
         />
         <DeviceSection
           title={`Patch panels (${patchPanels.length})`}
+          id="patch-panels"
           action={createPatchPanel}
           updateAction={updatePatchPanel}
           deleteAction={deletePatchPanel}
@@ -173,7 +193,7 @@ export default async function AdminPage({
           showModel={false}
         />
 
-        <Section title={`Pontos de rede (${points.length})`} description="Gerencie identificador, categoria de cabo e portas vinculadas.">
+        <Section id="network-points" title={`Pontos de rede (${points.length})`} description="Gerencie identificador, categoria de cabo e portas vinculadas.">
           <form action={createNetworkPoint} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Field name="code" label="Código" required />
             <Field name="location" label="Localização" required />
@@ -188,28 +208,37 @@ export default async function AdminPage({
           </form>
           <div className="mt-4 space-y-3">
             {points.map((point) => (
-              <div key={point.id} className="grid gap-2 rounded-md border border-line p-3 lg:grid-cols-[1fr_auto]">
-                <form action={updateNetworkPoint} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                  <input type="hidden" name="id" value={point.id} />
-                  <Field name="code" label="Código" defaultValue={point.code} required />
-                  <Field name="location" label="Localização" defaultValue={point.location} required />
-                  <CableSelect defaultValue={point.cableCategory} />
-                  <PortSelect name="patchPanelPortId" label="Patch panel" defaultValue={point.patchPanelPortId ?? ""}
-                    ports={panelPorts.map((port) => ({ id: port.id, label: `${port.patchPanel.name} · ${port.number}` }))} />
-                  <PortSelect name="switchPortId" label="Switch" defaultValue={point.switchPortId ?? ""}
-                    ports={switchPorts.map((port) => ({ id: port.id, label: `${port.switch.name} · ${port.number}` }))} />
-                  <button className={buttonClass}>Salvar ponto</button>
-                </form>
-                <form action={deleteNetworkPoint} className="flex items-end">
-                  <input type="hidden" name="id" value={point.id} />
-                  <ConfirmButton message={`Excluir o ponto ${point.code} e suas certificações?`}>Excluir</ConfirmButton>
-                </form>
-              </div>
+              <details key={point.id} className="rounded-md border border-line p-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                  <span>
+                    <span className="block font-medium text-ink-900">{point.code}</span>
+                    <span className="text-sm text-ink-500">{point.location} · {point.cableCategory.replace("_", " ")}</span>
+                  </span>
+                  <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
+                </summary>
+                <div className="mt-4 grid gap-2 border-t border-line pt-4 lg:grid-cols-[1fr_auto]">
+                  <form action={updateNetworkPoint} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                    <input type="hidden" name="id" value={point.id} />
+                    <Field name="code" label="Código" defaultValue={point.code} required />
+                    <Field name="location" label="Localização" defaultValue={point.location} required />
+                    <CableSelect defaultValue={point.cableCategory} />
+                    <PortSelect name="patchPanelPortId" label="Patch panel" defaultValue={point.patchPanelPortId ?? ""}
+                      ports={panelPorts.map((port) => ({ id: port.id, label: `${port.patchPanel.name} · ${port.number}` }))} />
+                    <PortSelect name="switchPortId" label="Switch" defaultValue={point.switchPortId ?? ""}
+                      ports={switchPorts.map((port) => ({ id: port.id, label: `${port.switch.name} · ${port.number}` }))} />
+                    <button className={buttonClass}>Salvar ponto</button>
+                  </form>
+                  <form action={deleteNetworkPoint} className="flex items-end">
+                    <input type="hidden" name="id" value={point.id} />
+                    <ConfirmButton message={`Excluir o ponto ${point.code} e suas certificações?`}>Excluir</ConfirmButton>
+                  </form>
+                </div>
+              </details>
             ))}
           </div>
         </Section>
 
-        <Section title={`Certificações (${tests.length})`} description="Registre e atualize os resultados dos testes por ponto de rede.">
+        <Section id="certifications" title={`Certificações (${tests.length})`} description="Registre e atualize os resultados dos testes por ponto de rede.">
           <form action={createCertification} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <PointSelect points={points} />
             <ResultSelect />
@@ -219,25 +248,34 @@ export default async function AdminPage({
           </form>
           <div className="mt-4 space-y-3">
             {tests.map((test) => (
-              <div key={test.id} className="grid gap-2 rounded-md border border-line p-3 lg:grid-cols-[1fr_auto]">
-                <form action={updateCertification} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  <input type="hidden" name="id" value={test.id} />
-                  <PointSelect points={points} defaultValue={test.networkPointId} />
-                  <ResultSelect defaultValue={test.result} />
-                  <Field name="performedBy" label="Realizado por" defaultValue={test.performedBy ?? ""} />
-                  <Field name="notes" label="Observações" defaultValue={test.notes ?? ""} />
-                  <button className={buttonClass}>Salvar teste</button>
-                </form>
-                <form action={deleteCertification} className="flex items-end">
-                  <input type="hidden" name="id" value={test.id} />
-                  <ConfirmButton message={`Excluir o teste do ponto ${test.networkPoint.code}?`}>Excluir</ConfirmButton>
-                </form>
-              </div>
+              <details key={test.id} className="rounded-md border border-line p-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                  <span>
+                    <span className="block font-medium text-ink-900">{test.networkPoint.code} · {resultLabel(test.result)}</span>
+                    <span className="text-sm text-ink-500">{test.performedAt.toLocaleDateString("pt-BR")} · {test.performedBy || "Responsável não informado"}</span>
+                  </span>
+                  <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
+                </summary>
+                <div className="mt-4 grid gap-2 border-t border-line pt-4 lg:grid-cols-[1fr_auto]">
+                  <form action={updateCertification} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    <input type="hidden" name="id" value={test.id} />
+                    <PointSelect points={points} defaultValue={test.networkPointId} />
+                    <ResultSelect defaultValue={test.result} />
+                    <Field name="performedBy" label="Realizado por" defaultValue={test.performedBy ?? ""} />
+                    <Field name="notes" label="Observações" defaultValue={test.notes ?? ""} />
+                    <button className={buttonClass}>Salvar teste</button>
+                  </form>
+                  <form action={deleteCertification} className="flex items-end">
+                    <input type="hidden" name="id" value={test.id} />
+                    <ConfirmButton message={`Excluir o teste do ponto ${test.networkPoint.code}?`}>Excluir</ConfirmButton>
+                  </form>
+                </div>
+              </details>
             ))}
           </div>
         </Section>
 
-        <Section title={`Materiais / BOM (${bomItems.length})`} description="Gerencie lista de materiais, unidades, quantidades e custos estimados.">
+        <Section id="bom" title={`Materiais / BOM (${bomItems.length})`} description="Gerencie lista de materiais, unidades, quantidades e custos estimados.">
           <form action={updateBomMargin} className="mb-4 flex flex-wrap items-end gap-3 rounded-md bg-ink-100 p-4">
             <Field
               name="marginPercent"
@@ -259,20 +297,29 @@ export default async function AdminPage({
           </form>
           <div className="mt-4 space-y-3">
             {bomItems.map((item) => (
-              <div key={item.id} className="grid gap-2 rounded-md border border-line p-3 lg:grid-cols-[1fr_auto]">
-                <form action={updateBomItem} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  <input type="hidden" name="id" value={item.id} />
-                  <Field name="name" label="Material" defaultValue={item.name} required />
-                  <Field name="unit" label="Unidade" defaultValue={item.unit} required />
-                  <Field name="quantity" label="Quantidade" type="number" min="0.01" step="any" defaultValue={item.quantity} required />
-                  <Field name="estimatedCost" label="Custo estimado" type="number" min="0" step="any" defaultValue={item.estimatedCost} required />
-                  <button className={buttonClass}>Salvar item</button>
-                </form>
-                <form action={deleteBomItem} className="flex items-end">
-                  <input type="hidden" name="id" value={item.id} />
-                  <ConfirmButton message={`Excluir o item ${item.name}?`}>Excluir</ConfirmButton>
-                </form>
-              </div>
+              <details key={item.id} className="rounded-md border border-line p-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                  <span>
+                    <span className="block font-medium text-ink-900">{item.name}</span>
+                    <span className="text-sm text-ink-500">{item.quantity} {item.unit} · {item.estimatedCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                  </span>
+                  <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
+                </summary>
+                <div className="mt-4 grid gap-2 border-t border-line pt-4 lg:grid-cols-[1fr_auto]">
+                  <form action={updateBomItem} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    <input type="hidden" name="id" value={item.id} />
+                    <Field name="name" label="Material" defaultValue={item.name} required />
+                    <Field name="unit" label="Unidade" defaultValue={item.unit} required />
+                    <Field name="quantity" label="Quantidade" type="number" min="0.01" step="any" defaultValue={item.quantity} required />
+                    <Field name="estimatedCost" label="Custo estimado" type="number" min="0" step="any" defaultValue={item.estimatedCost} required />
+                    <button className={buttonClass}>Salvar item</button>
+                  </form>
+                  <form action={deleteBomItem} className="flex items-end">
+                    <input type="hidden" name="id" value={item.id} />
+                    <ConfirmButton message={`Excluir o item ${item.name}?`}>Excluir</ConfirmButton>
+                  </form>
+                </div>
+              </details>
             ))}
           </div>
         </Section>
@@ -281,13 +328,14 @@ export default async function AdminPage({
   );
 }
 
-function Section({ title, description, children }: {
+function Section({ id, title, description, children }: {
+  id?: string;
   title: string;
   description: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-line bg-white p-5 shadow-card">
+    <section id={id} className="scroll-mt-6 rounded-lg border border-line bg-white p-5 shadow-card">
       <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
       <p className="mb-4 mt-1 text-sm text-ink-500">{description}</p>
       {children}
@@ -330,6 +378,18 @@ function RoleSelect({ defaultValue = "LEITOR" }: { defaultValue?: Role }) {
       <option value="LEITOR">Leitor</option>
     </SelectField>
   );
+}
+
+function roleLabel(role: Role) {
+  if (role === Role.ADMIN) return "Administrador";
+  if (role === Role.TECNICO) return "Técnico";
+  return "Leitor";
+}
+
+function resultLabel(result: TestResult) {
+  if (result === TestResult.PASS) return "Aprovado";
+  if (result === TestResult.FAIL) return "Reprovado";
+  return "Pendente";
 }
 
 function CableSelect({ defaultValue = "CAT6" }: { defaultValue?: CableCategory }) {
@@ -376,9 +436,10 @@ function PointSelect({ points, defaultValue }: {
 }
 
 function DeviceSection({
-  title, action, updateAction, deleteAction, devices, racks, deleteMessage,
+  id, title, action, updateAction, deleteAction, devices, racks, deleteMessage,
   showModel = true,
 }: {
+  id: string;
   title: string;
   action: (formData: FormData) => void;
   updateAction: (formData: FormData) => void;
@@ -389,7 +450,7 @@ function DeviceSection({
   showModel?: boolean;
 }) {
   return (
-    <Section title={title} description="Ajuste nome, modelo, capacidade de portas e rack associado.">
+    <Section id={id} title={title} description="Ajuste nome, modelo, capacidade de portas e rack associado.">
       <form action={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Field name="name" label="Nome" required />
         {showModel && <Field name="model" label="Modelo" />}
@@ -399,20 +460,31 @@ function DeviceSection({
       </form>
       <div className="mt-4 space-y-3">
         {devices.map((device) => (
-          <div key={device.id} className="grid gap-2 rounded-md border border-line p-3 lg:grid-cols-[1fr_auto]">
-            <form action={updateAction} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-              <input type="hidden" name="id" value={device.id} />
-              <Field name="name" label="Nome" defaultValue={device.name} required />
-              {showModel && <Field name="model" label="Modelo" defaultValue={device.model ?? ""} />}
-              <Field name="portCount" label="Portas" type="number" min="1" max="512" defaultValue={device.portCount} required />
-              <RackSelect racks={racks} defaultValue={device.rackId ?? ""} />
-              <button className={buttonClass}>Salvar</button>
-            </form>
-            <form action={deleteAction} className="flex items-end">
-              <input type="hidden" name="id" value={device.id} />
-              <ConfirmButton message={`${deleteMessage} ${device.name}?`}>Excluir</ConfirmButton>
-            </form>
-          </div>
+          <details key={device.id} className="rounded-md border border-line p-3">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+              <span>
+                <span className="block font-medium text-ink-900">{device.name}</span>
+                <span className="text-sm text-ink-500">
+                  {device.model ? `${device.model} · ` : ""}{device.portCount} portas
+                </span>
+              </span>
+              <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
+            </summary>
+            <div className="mt-4 grid gap-2 border-t border-line pt-4 lg:grid-cols-[1fr_auto]">
+              <form action={updateAction} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                <input type="hidden" name="id" value={device.id} />
+                <Field name="name" label="Nome" defaultValue={device.name} required />
+                {showModel && <Field name="model" label="Modelo" defaultValue={device.model ?? ""} />}
+                <Field name="portCount" label="Portas" type="number" min="1" max="512" defaultValue={device.portCount} required />
+                <RackSelect racks={racks} defaultValue={device.rackId ?? ""} />
+                <button className={buttonClass}>Salvar</button>
+              </form>
+              <form action={deleteAction} className="flex items-end">
+                <input type="hidden" name="id" value={device.id} />
+                <ConfirmButton message={`${deleteMessage} ${device.name}?`}>Excluir</ConfirmButton>
+              </form>
+            </div>
+          </details>
         ))}
       </div>
     </Section>
