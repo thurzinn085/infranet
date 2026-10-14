@@ -40,24 +40,37 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-ink-100">
       <header className="flex items-center justify-between border-b border-line px-6 py-4">
         <p className="font-semibold text-ink-900">InfraNet</p>
-        <div className="flex items-center gap-4">
-          {user.role === "ADMIN" && (
-            <a href="/admin" className="text-sm font-medium text-ink-700 hover:text-ink-900">
-              Administração
-            </a>
-          )}
-          <form action={logout}>
-            <button className="text-sm text-ink-500 hover:text-ink-900">Sair</button>
-          </form>
-        </div>
+        <details className="group relative">
+          <summary
+            aria-label="Abrir menu"
+            className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-md text-2xl leading-none text-ink-700 hover:bg-ink-100 focus:outline-none focus:ring-2 focus:ring-ink-500 [&::-webkit-details-marker]:hidden"
+          >
+            ⋮
+          </summary>
+          <nav
+            aria-label="Menu principal"
+            className="absolute right-0 top-12 z-10 min-w-48 rounded-md border border-line bg-white p-1 shadow-lg"
+          >
+            {user.role === "ADMIN" && (
+              <a
+                href="/admin"
+                className="block rounded px-3 py-2 text-sm text-ink-900 hover:bg-ink-100"
+              >
+                Administração
+              </a>
+            )}
+            <form action={logout}>
+              <button className="block w-full rounded px-3 py-2 text-left text-sm text-ink-700 hover:bg-ink-100">
+                Sair
+              </button>
+            </form>
+          </nav>
+        </details>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm text-ink-500">
-              {user.role === "ADMIN" ? "Administrador" : user.role === "TECNICO" ? "Técnico" : "Leitor"}
-            </p>
             <h1 className="mt-1 text-2xl font-semibold text-ink-900">
               Olá, {user.firstName}.
             </h1>

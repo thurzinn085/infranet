@@ -12,7 +12,9 @@ de senha, sessao persistente "lembrar de mim").
   service worker).
 - Administradores podem criar, editar e excluir usuarios, definir perfis e
   redefinir senhas; tambem podem gerenciar racks, switches, patch panels,
-  pontos de rede, certificacoes e itens/configuracao da BOM pela rota `/admin`.
+  pontos de rede, certificacoes e itens/configuracao da BOM pela opcao
+  "Administracao" no menu de tres pontos do painel. Esse atalho aparece apenas
+  para administradores, e a rota `/admin` tambem valida o perfil no servidor.
 - Ainda **nao** implementado (proximos turnos, seguindo a Prioridade 2-5 da
   especificacao): geracao de etiquetas, metricas detalhadas e central de ajuda.
   O painel inicial mostra contagens do inventario, certificacoes e itens da
