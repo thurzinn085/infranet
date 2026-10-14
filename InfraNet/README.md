@@ -10,13 +10,13 @@ de senha, sessao persistente "lembrar de mim").
   sessao com "lembrar de mim", primeira conta = Administrador
   (decidido no backend), mostrar/ocultar senha, PWA instalavel (manifest +
   service worker).
-- Administradores podem criar, editar e excluir usuarios, definir perfis e
-  redefinir senhas; tambem podem gerenciar racks, switches, patch panels,
-  pontos de rede, certificacoes e itens/configuracao da BOM pela opcao
-  "Administracao" no menu de tres pontos do painel. Esse atalho aparece apenas
-  para administradores, e a rota `/admin` tambem valida o perfil no servidor.
-  Os cartoes do painel levam os administradores diretamente a cada secao; na
-  lista, cada registro pode ser aberto para editar ou excluir.
+- Existem apenas dois perfis: Administrador e Usuário. Administradores podem
+  criar e gerenciar contas e consultar/gerenciar todas as infraestruturas.
+  Usuários podem criar e gerenciar seus próprios racks, equipamentos, pontos
+  de rede, certificações e itens/configuração da BOM em "Minha infraestrutura".
+  Os dados de cada usuário são isolados no servidor. A BOM apresenta a média
+  simples dos custos unitários dos materiais e o custo total estimado
+  (quantidade × custo unitário).
 - Ainda **nao** implementado (proximos turnos, seguindo a Prioridade 2-5 da
   especificacao): geracao de etiquetas, metricas detalhadas e central de ajuda.
   O painel inicial mostra contagens do inventario, certificacoes e itens da
@@ -46,7 +46,8 @@ npm run dev
 ```
 
 Acesse `http://localhost:3000`. A primeira conta criada em `/register` recebe
-automaticamente o papel de Administrador.
+automaticamente o papel de Administrador; as seguintes recebem o papel de
+Usuário. Os perfis podem ser alterados por um administrador.
 
 Se `RESEND_API_KEY` nao estiver configurada, os e-mails de recuperacao sao
 apenas registrados no console do servidor (util para testar
@@ -99,6 +100,23 @@ Cada `git push` para a branch principal do repositorio gera um novo deploy
 automatico na Vercel. Alteracoes no `schema.prisma` exigem rodar
 `npx prisma db push` (ou `migrate deploy`) apontando para o banco de producao
 antes ou logo apos o deploy.
+
+Ao atualizar um banco que ja possui contas com os perfis antigos, converta
+esses perfis antes do `db push` (mantenha `ADMIN`; os perfis antigos passam a
+ser `USER`). Execute e confirme o primeiro comando antes do segundo:
+
+```sql
+ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'USER';
+```
+
+```sql
+UPDATE users SET role = 'USER' WHERE role IN ('TECNICO', 'LEITOR');
+```
+
+As novas colunas de proprietário são opcionais para preservar os registros de
+infraestrutura existentes. Esses registros antigos permanecem visíveis aos
+administradores; a partir da atualização, os novos registros ficam associados
+à conta que os criou e usuários comuns só veem e alteram os próprios dados.
 
 ### Verificando se esta no ar
 

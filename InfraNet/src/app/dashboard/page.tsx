@@ -7,6 +7,8 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const owned = user.role === "ADMIN" ? {} : { ownerId: user.id };
+  const ownedTests = user.role === "ADMIN" ? {} : { networkPoint: { ownerId: user.id } };
   const [
     networkPoints,
     racks,
@@ -18,15 +20,15 @@ export default async function DashboardPage() {
     failedTests,
     bomItems,
   ] = await Promise.all([
-    db.networkPoint.count(),
-    db.rack.count(),
-    db.switch.count(),
-    db.patchPanel.count(),
-    db.certificationTest.count(),
-    db.certificationTest.count({ where: { result: "PASS" } }),
-    db.certificationTest.count({ where: { result: "PENDENTE" } }),
-    db.certificationTest.count({ where: { result: "FAIL" } }),
-    db.bomItem.count(),
+    db.networkPoint.count({ where: owned }),
+    db.rack.count({ where: owned }),
+    db.switch.count({ where: owned }),
+    db.patchPanel.count({ where: owned }),
+    db.certificationTest.count({ where: ownedTests }),
+    db.certificationTest.count({ where: { ...ownedTests, result: "PASS" } }),
+    db.certificationTest.count({ where: { ...ownedTests, result: "PENDENTE" } }),
+    db.certificationTest.count({ where: { ...ownedTests, result: "FAIL" } }),
+    db.bomItem.count({ where: owned }),
   ]);
 
   const hasData = networkPoints + racks + switches + patchPanels + totalTests + bomItems > 0;
@@ -52,14 +54,12 @@ export default async function DashboardPage() {
             aria-label="Menu principal"
             className="absolute right-0 top-12 z-10 min-w-48 rounded-md border border-line bg-white p-1 shadow-lg"
           >
-            {user.role === "ADMIN" && (
-              <a
-                href="/admin"
-                className="block rounded px-3 py-2 text-sm text-ink-900 hover:bg-ink-100"
-              >
-                Administração
-              </a>
-            )}
+            <a
+              href="/admin"
+              className="block rounded px-3 py-2 text-sm text-ink-900 hover:bg-ink-100"
+            >
+              {user.role === "ADMIN" ? "Administração" : "Minha infraestrutura"}
+            </a>
             <form action={logout}>
               <button className="block w-full rounded px-3 py-2 text-left text-sm text-ink-700 hover:bg-ink-100">
                 Sair
@@ -90,11 +90,11 @@ export default async function DashboardPage() {
         )}
 
         <section aria-label="Inventário" className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <MetricCard label="Pontos de rede" value={networkPoints} href={user.role === "ADMIN" ? "/admin#network-points" : undefined} />
-          <MetricCard label="Racks" value={racks} href={user.role === "ADMIN" ? "/admin#racks" : undefined} />
-          <MetricCard label="Switches" value={switches} href={user.role === "ADMIN" ? "/admin#switches" : undefined} />
-          <MetricCard label="Patch panels" value={patchPanels} href={user.role === "ADMIN" ? "/admin#patch-panels" : undefined} />
-          <MetricCard label="Itens na BOM" value={bomItems} href={user.role === "ADMIN" ? "/admin#bom" : undefined} />
+          <MetricCard label="Pontos de rede" value={networkPoints} href="/admin#network-points" />
+          <MetricCard label="Racks" value={racks} href="/admin#racks" />
+          <MetricCard label="Switches" value={switches} href="/admin#switches" />
+          <MetricCard label="Patch panels" value={patchPanels} href="/admin#patch-panels" />
+          <MetricCard label="Itens na BOM" value={bomItems} href="/admin#bom" />
         </section>
 
         <section aria-labelledby="certifications-heading" className="mt-10">
@@ -105,9 +105,9 @@ export default async function DashboardPage() {
             <p className="text-sm text-ink-500">{totalTests} no total</p>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <MetricCard label="Aprovados" value={passedTests} href={user.role === "ADMIN" ? "/admin#certifications" : undefined} />
-            <MetricCard label="Pendentes" value={pendingTests} href={user.role === "ADMIN" ? "/admin#certifications" : undefined} />
-            <MetricCard label="Reprovados" value={failedTests} href={user.role === "ADMIN" ? "/admin#certifications" : undefined} />
+            <MetricCard label="Aprovados" value={passedTests} href="/admin#certifications" />
+            <MetricCard label="Pendentes" value={pendingTests} href="/admin#certifications" />
+            <MetricCard label="Reprovados" value={failedTests} href="/admin#certifications" />
           </div>
         </section>
       </main>

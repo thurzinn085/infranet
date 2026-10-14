@@ -25,6 +25,34 @@ async function requireAdmin() {
   return user;
 }
 
+async function requireUser() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return user;
+}
+
+function ownerScope(user: Awaited<ReturnType<typeof requireUser>>) {
+  return user.role === "ADMIN" ? {} : { ownerId: user.id };
+}
+
+async function ensureRackAccess(user: Awaited<ReturnType<typeof requireUser>>, rackId: string | null) {
+  if (rackId && !await db.rack.findFirst({ where: { id: rackId, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Rack não encontrado na sua infraestrutura.");
+  }
+}
+
+async function ensurePortAccess(
+  user: Awaited<ReturnType<typeof requireUser>>,
+  portId: string | null,
+  kind: "switch" | "patchPanel"
+) {
+  if (!portId) return;
+  const port = kind === "switch"
+    ? await db.switchPort.findFirst({ where: { id: portId, switch: ownerScope(user) }, select: { id: true } })
+    : await db.patchPanelPort.findFirst({ where: { id: portId, patchPanel: ownerScope(user) }, select: { id: true } });
+  if (!port) report("error", "Porta não encontrada na sua infraestrutura.");
+}
+
 function refreshAdmin(message: string) {
   revalidatePath("/admin");
   revalidatePath("/dashboard");
@@ -154,23 +182,29 @@ export async function resetUserPassword(formData: FormData) {
 
 const rackFields = z.object({ name: nameSchema, location: optionalText });
 export async function createRack(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = rackFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Informe um nome válido para o rack.");
-  await db.rack.create({ data: parsed.data });
+  await db.rack.create({ data: { ...parsed.data, ownerId: user.id } });
   refreshAdmin("Rack criado.");
 }
 export async function updateRack(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = rackFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Dados do rack inválidos.");
+  if (!await db.rack.findFirst({ where: { id: parsed.data.id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Rack não encontrado na sua infraestrutura.");
+  }
   await db.rack.update({ where: { id: parsed.data.id }, data: { name: parsed.data.name, location: parsed.data.location } });
   refreshAdmin("Rack atualizado.");
 }
 export async function deleteRack(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = z.object({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Rack inválido.");
+  if (!await db.rack.findFirst({ where: { id: parsed.data.id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Rack não encontrado na sua infraestrutura.");
+  }
   const [switches, panels] = await Promise.all([
     db.switch.count({ where: { rackId: parsed.data.id } }),
     db.patchPanel.count({ where: { rackId: parsed.data.id } }),
@@ -192,11 +226,12 @@ const patchPanelFields = z.object({
   rackId: optionalId,
 });
 export async function createSwitch(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = deviceFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira os dados e o número de portas do switch.");
+  await ensureRackAccess(user, parsed.data.rackId);
   await db.$transaction(async (tx) => {
-    const device = await tx.switch.create({ data: parsed.data });
+    const device = await tx.switch.create({ data: { ...parsed.data, ownerId: user.id } });
     await tx.switchPort.createMany({
       data: Array.from({ length: parsed.data.portCount }, (_, index) => ({ switchId: device.id, number: index + 1 })),
     });
@@ -204,10 +239,14 @@ export async function createSwitch(formData: FormData) {
   refreshAdmin("Switch criado com suas portas.");
 }
 export async function updateSwitch(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = deviceFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira os dados e o número de portas do switch.");
   const { id, ...data } = parsed.data;
+  if (!await db.switch.findFirst({ where: { id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Switch não encontrado na sua infraestrutura.");
+  }
+  await ensureRackAccess(user, data.rackId);
   const occupiedPort = await db.$transaction(async (tx) => {
     const blockedPort = await updateSwitchPortRows(tx, id, data.portCount);
     if (blockedPort) return blockedPort;
@@ -218,9 +257,12 @@ export async function updateSwitch(formData: FormData) {
   refreshAdmin("Switch atualizado.");
 }
 export async function deleteSwitch(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = z.object({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Switch inválido.");
+  if (!await db.switch.findFirst({ where: { id: parsed.data.id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Switch não encontrado na sua infraestrutura.");
+  }
   const occupied = await db.switchPort.findFirst({
     where: { switchId: parsed.data.id, networkPoint: { isNot: null } },
     select: { number: true },
@@ -231,11 +273,12 @@ export async function deleteSwitch(formData: FormData) {
 }
 
 export async function createPatchPanel(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = patchPanelFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira os dados e o número de portas do patch panel.");
+  await ensureRackAccess(user, parsed.data.rackId);
   await db.$transaction(async (tx) => {
-    const panel = await tx.patchPanel.create({ data: parsed.data });
+    const panel = await tx.patchPanel.create({ data: { ...parsed.data, ownerId: user.id } });
     await tx.patchPanelPort.createMany({
       data: Array.from({ length: parsed.data.portCount }, (_, index) => ({ patchPanelId: panel.id, number: index + 1 })),
     });
@@ -243,10 +286,14 @@ export async function createPatchPanel(formData: FormData) {
   refreshAdmin("Patch panel criado com suas portas.");
 }
 export async function updatePatchPanel(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = patchPanelFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira os dados e o número de portas do patch panel.");
   const { id, ...data } = parsed.data;
+  if (!await db.patchPanel.findFirst({ where: { id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Patch panel não encontrado na sua infraestrutura.");
+  }
+  await ensureRackAccess(user, data.rackId);
   const occupiedPort = await db.$transaction(async (tx) => {
     const blockedPort = await updatePatchPanelPortRows(tx, id, data.portCount);
     if (blockedPort) return blockedPort;
@@ -257,9 +304,12 @@ export async function updatePatchPanel(formData: FormData) {
   refreshAdmin("Patch panel atualizado.");
 }
 export async function deletePatchPanel(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = z.object({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Patch panel inválido.");
+  if (!await db.patchPanel.findFirst({ where: { id: parsed.data.id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Patch panel não encontrado na sua infraestrutura.");
+  }
   const occupied = await db.patchPanelPort.findFirst({
     where: { patchPanelId: parsed.data.id, networkPoint: { isNot: null } },
     select: { number: true },
@@ -277,29 +327,44 @@ const pointFields = z.object({
   switchPortId: optionalId,
 });
 export async function createNetworkPoint(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = pointFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira o código, local e categoria do ponto.");
-  if (await db.networkPoint.findUnique({ where: { code: parsed.data.code }, select: { id: true } })) {
+  if (await db.networkPoint.findFirst({
+    where: { code: parsed.data.code, ownerId: user.id },
+    select: { id: true },
+  })) {
     report("error", "Já existe um ponto com este código.");
   }
-  if (parsed.data.patchPanelPortId && await db.networkPoint.findUnique({
+  await ensurePortAccess(user, parsed.data.patchPanelPortId, "patchPanel");
+  await ensurePortAccess(user, parsed.data.switchPortId, "switch");
+  if (parsed.data.patchPanelPortId && await db.networkPoint.findFirst({
     where: { patchPanelPortId: parsed.data.patchPanelPortId }, select: { id: true },
   })) report("error", "A porta do patch panel já está vinculada a outro ponto.");
-  if (parsed.data.switchPortId && await db.networkPoint.findUnique({
+  if (parsed.data.switchPortId && await db.networkPoint.findFirst({
     where: { switchPortId: parsed.data.switchPortId }, select: { id: true },
   })) report("error", "A porta do switch já está vinculada a outro ponto.");
-  await db.networkPoint.create({ data: parsed.data });
+  await db.networkPoint.create({ data: { ...parsed.data, ownerId: user.id } });
   refreshAdmin("Ponto de rede criado.");
 }
 export async function updateNetworkPoint(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = pointFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira os dados do ponto de rede.");
   const { id, ...data } = parsed.data;
-  if (await db.networkPoint.findFirst({ where: { code: data.code, id: { not: id } }, select: { id: true } })) {
+  const existing = await db.networkPoint.findFirst({
+    where: { id, ...ownerScope(user) },
+    select: { id: true, ownerId: true },
+  });
+  if (!existing) report("error", "Ponto não encontrado na sua infraestrutura.");
+  if (await db.networkPoint.findFirst({
+    where: { code: data.code, ownerId: existing.ownerId, id: { not: id } },
+    select: { id: true },
+  })) {
     report("error", "Já existe um ponto com este código.");
   }
+  await ensurePortAccess(user, data.patchPanelPortId, "patchPanel");
+  await ensurePortAccess(user, data.switchPortId, "switch");
   if (data.patchPanelPortId && await db.networkPoint.findFirst({
     where: { patchPanelPortId: data.patchPanelPortId, id: { not: id } }, select: { id: true },
   })) report("error", "A porta do patch panel já está vinculada a outro ponto.");
@@ -310,9 +375,12 @@ export async function updateNetworkPoint(formData: FormData) {
   refreshAdmin("Ponto de rede atualizado.");
 }
 export async function deleteNetworkPoint(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = z.object({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Ponto inválido.");
+  if (!await db.networkPoint.findFirst({ where: { id: parsed.data.id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Ponto não encontrado na sua infraestrutura.");
+  }
   await db.networkPoint.delete({ where: { id: parsed.data.id } });
   refreshAdmin("Ponto de rede e certificações relacionadas excluídos.");
 }
@@ -324,24 +392,41 @@ const certificationFields = z.object({
   notes: optionalText,
 });
 export async function createCertification(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = certificationFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Selecione um ponto e um resultado para a certificação.");
+  if (!await db.networkPoint.findFirst({
+    where: { id: parsed.data.networkPointId, ...ownerScope(user) },
+    select: { id: true },
+  })) report("error", "Ponto não encontrado na sua infraestrutura.");
   await db.certificationTest.create({ data: parsed.data });
   refreshAdmin("Certificação registrada.");
 }
 export async function updateCertification(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = certificationFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira os dados da certificação.");
   const { id, ...data } = parsed.data;
+  const existing = await db.certificationTest.findFirst({
+    where: { id, networkPoint: ownerScope(user) },
+    select: { id: true },
+  });
+  if (!existing) report("error", "Certificação não encontrada na sua infraestrutura.");
+  if (!await db.networkPoint.findFirst({
+    where: { id: data.networkPointId, ...ownerScope(user) },
+    select: { id: true },
+  })) report("error", "Ponto não encontrado na sua infraestrutura.");
   await db.certificationTest.update({ where: { id }, data });
   refreshAdmin("Certificação atualizada.");
 }
 export async function deleteCertification(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = z.object({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Certificação inválida.");
+  if (!await db.certificationTest.findFirst({
+    where: { id: parsed.data.id, networkPoint: ownerScope(user) },
+    select: { id: true },
+  })) report("error", "Certificação não encontrada na sua infraestrutura.");
   await db.certificationTest.delete({ where: { id: parsed.data.id } });
   refreshAdmin("Certificação excluída.");
 }
@@ -353,43 +438,53 @@ const bomFields = z.object({
   estimatedCost: z.coerce.number().finite().min(0),
 });
 export async function createBomItem(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = bomFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira nome, unidade, quantidade e custo do item.");
-  await db.bomItem.create({ data: parsed.data });
+  await db.bomItem.create({ data: { ...parsed.data, ownerId: user.id } });
   refreshAdmin("Item da BOM criado.");
 }
 export async function updateBomItem(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = bomFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira os dados do item da BOM.");
   const { id, ...data } = parsed.data;
+  if (!await db.bomItem.findFirst({ where: { id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Item da BOM não encontrado na sua infraestrutura.");
+  }
   await db.bomItem.update({ where: { id }, data });
   refreshAdmin("Item da BOM atualizado.");
 }
 export async function deleteBomItem(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = z.object({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Item da BOM inválido.");
+  if (!await db.bomItem.findFirst({ where: { id: parsed.data.id, ...ownerScope(user) }, select: { id: true } })) {
+    report("error", "Item da BOM não encontrado na sua infraestrutura.");
+  }
   await db.bomItem.delete({ where: { id: parsed.data.id } });
   refreshAdmin("Item da BOM excluído.");
 }
 
 export async function updateBomMargin(formData: FormData) {
-  await requireAdmin();
+  const user = await requireUser();
   const parsed = z.object({ marginPercent: z.coerce.number().finite().min(0) })
     .safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Informe uma margem válida, igual ou maior que zero.");
 
   await db.$transaction(async (tx) => {
-    const settings = await tx.bomSettings.findFirst();
+    const settings = user.role === "ADMIN"
+      ? await tx.bomSettings.findFirst({ where: { OR: [{ userId: user.id }, { userId: null }] } })
+      : await tx.bomSettings.findUnique({ where: { userId: user.id } });
     if (settings) {
       await tx.bomSettings.update({
         where: { id: settings.id },
         data: { marginPercent: parsed.data.marginPercent },
       });
     } else {
-      await tx.bomSettings.create({ data: { marginPercent: parsed.data.marginPercent } });
+      await tx.bomSettings.create({
+        data: { userId: user.id, marginPercent: parsed.data.marginPercent },
+      });
     }
   });
   refreshAdmin("Margem de custo atualizada.");

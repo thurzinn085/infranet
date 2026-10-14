@@ -41,29 +41,32 @@ export default async function AdminPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== Role.ADMIN) redirect("/dashboard");
 
   const [users, racks, switches, patchPanels, points, switchPorts, panelPorts, tests, bomItems, bomSettings] =
     await Promise.all([
-      db.user.findMany({ orderBy: { createdAt: "asc" } }),
-      db.rack.findMany({ orderBy: { name: "asc" } }),
-      db.switch.findMany({ include: { rack: true }, orderBy: { name: "asc" } }),
-      db.patchPanel.findMany({ include: { rack: true }, orderBy: { name: "asc" } }),
+      user.role === Role.ADMIN ? db.user.findMany({ orderBy: { createdAt: "asc" } }) : [],
+      db.rack.findMany({ where: user.role === Role.ADMIN ? {} : { ownerId: user.id }, orderBy: { name: "asc" } }),
+      db.switch.findMany({ where: user.role === Role.ADMIN ? {} : { ownerId: user.id }, include: { rack: true }, orderBy: { name: "asc" } }),
+      db.patchPanel.findMany({ where: user.role === Role.ADMIN ? {} : { ownerId: user.id }, include: { rack: true }, orderBy: { name: "asc" } }),
       db.networkPoint.findMany({
+        where: user.role === Role.ADMIN ? {} : { ownerId: user.id },
         include: {
           patchPanelPort: { include: { patchPanel: true } },
           switchPort: { include: { switch: true } },
         },
         orderBy: { code: "asc" },
       }),
-      db.switchPort.findMany({ include: { switch: true }, orderBy: { number: "asc" } }),
-      db.patchPanelPort.findMany({ include: { patchPanel: true }, orderBy: { number: "asc" } }),
+      db.switchPort.findMany({ where: user.role === Role.ADMIN ? {} : { switch: { ownerId: user.id } }, include: { switch: true }, orderBy: { number: "asc" } }),
+      db.patchPanelPort.findMany({ where: user.role === Role.ADMIN ? {} : { patchPanel: { ownerId: user.id } }, include: { patchPanel: true }, orderBy: { number: "asc" } }),
       db.certificationTest.findMany({
+        where: user.role === Role.ADMIN ? {} : { networkPoint: { ownerId: user.id } },
         include: { networkPoint: true },
         orderBy: { performedAt: "desc" },
       }),
-      db.bomItem.findMany({ orderBy: { name: "asc" } }),
-      db.bomSettings.findFirst(),
+      db.bomItem.findMany({ where: user.role === Role.ADMIN ? {} : { ownerId: user.id }, orderBy: { name: "asc" } }),
+      user.role === Role.ADMIN
+        ? db.bomSettings.findFirst({ where: { OR: [{ userId: user.id }, { userId: null }] } })
+        : db.bomSettings.findUnique({ where: { userId: user.id } }),
     ]);
 
   return (
@@ -75,10 +78,16 @@ export default async function AdminPage({
 
       <div className="mx-auto max-w-6xl space-y-8 px-6 py-10">
         <div>
-          <p className="text-sm font-medium text-ink-500">Área administrativa</p>
-          <h1 className="mt-1 text-2xl font-semibold text-ink-900">Gerenciar sistema</h1>
+          <p className="text-sm font-medium text-ink-500">
+            {user.role === Role.ADMIN ? "Área administrativa" : "Sua infraestrutura"}
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold text-ink-900">
+            {user.role === Role.ADMIN ? "Gerenciar sistema" : "Gerenciar minha infraestrutura"}
+          </h1>
           <p className="mt-2 text-sm text-ink-500">
-            Administre usuários, equipamentos, pontos de rede, certificações e materiais.
+            {user.role === Role.ADMIN
+              ? "Administre usuários e gerencie todas as infraestruturas cadastradas."
+              : "Crie e gerencie seus equipamentos, pontos de rede, certificações e materiais."}
           </p>
         </div>
 
@@ -93,7 +102,7 @@ export default async function AdminPage({
           </p>
         )}
 
-        <Section title={`Usuários (${users.length})`} description="Crie contas e altere nome, e-mail e nível de acesso.">
+        {user.role === Role.ADMIN && <Section title={`Usuários (${users.length})`} description="Crie contas e altere nome, e-mail e nível de acesso.">
           <form action={createUser} className="grid gap-3 rounded-md bg-ink-100 p-4 sm:grid-cols-2 lg:grid-cols-6">
             <Field name="firstName" label="Nome" required />
             <Field name="lastName" label="Sobrenome" />
@@ -136,7 +145,7 @@ export default async function AdminPage({
               </details>
             ))}
           </div>
-        </Section>
+        </Section>}
 
         <Section id="racks" title={`Racks (${racks.length})`} description="Cadastre locais e agrupe switches e patch panels.">
           <form action={createRack} className="grid gap-3 sm:grid-cols-3">
@@ -276,6 +285,24 @@ export default async function AdminPage({
         </Section>
 
         <Section id="bom" title={`Materiais / BOM (${bomItems.length})`} description="Gerencie lista de materiais, unidades, quantidades e custos estimados.">
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <article className="rounded-md bg-ink-100 p-4">
+              <p className="text-sm text-ink-500">Média do custo unitário</p>
+              <p className="mt-1 text-xl font-semibold text-ink-900">
+                {(bomItems.length
+                  ? bomItems.reduce((sum, item) => sum + item.estimatedCost, 0) / bomItems.length
+                  : 0
+                ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </p>
+            </article>
+            <article className="rounded-md bg-ink-100 p-4">
+              <p className="text-sm text-ink-500">Custo total estimado</p>
+              <p className="mt-1 text-xl font-semibold text-ink-900">
+                {bomItems.reduce((sum, item) => sum + item.estimatedCost * item.quantity, 0)
+                  .toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </p>
+            </article>
+          </div>
           <form action={updateBomMargin} className="mb-4 flex flex-wrap items-end gap-3 rounded-md bg-ink-100 p-4">
             <Field
               name="marginPercent"
@@ -370,20 +397,18 @@ function SelectField({
   );
 }
 
-function RoleSelect({ defaultValue = "LEITOR" }: { defaultValue?: Role }) {
+function RoleSelect({ defaultValue = "USER" }: { defaultValue?: Role }) {
   return (
     <SelectField name="role" label="Perfil" defaultValue={defaultValue}>
       <option value="ADMIN">Administrador</option>
-      <option value="TECNICO">Técnico</option>
-      <option value="LEITOR">Leitor</option>
+      <option value="USER">Usuário</option>
     </SelectField>
   );
 }
 
 function roleLabel(role: Role) {
   if (role === Role.ADMIN) return "Administrador";
-  if (role === Role.TECNICO) return "Técnico";
-  return "Leitor";
+  return "Usuário";
 }
 
 function resultLabel(result: TestResult) {

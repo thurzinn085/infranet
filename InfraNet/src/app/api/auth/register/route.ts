@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   // automaticamente. Isso e decidido aqui, no backend, consultando o banco —
   // nunca a partir de um valor enviado pelo cliente.
   const userCount = await db.user.count();
-  const role = userCount === 0 ? "ADMIN" : "LEITOR";
+  const role = userCount === 0 ? "ADMIN" : "USER";
 
   const passwordHash = await hashPassword(password);
 
