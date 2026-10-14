@@ -4,18 +4,19 @@ Sistema de gestao da infraestrutura de rede estruturada — site e PWA no mesmo
 projeto (Next.js), com autenticacao completa (login, cadastro, recuperacao
 de senha, sessao persistente "lembrar de mim").
 
-## Status atual (Prioridade 1 concluida)
+## Status atual
 
 - Login, cadastro sem confirmacao por e-mail, recuperacao de senha por codigo,
   sessao com "lembrar de mim", primeira conta = Administrador
   (decidido no backend), mostrar/ocultar senha, PWA instalavel (manifest +
   service worker).
+- Administradores podem criar, editar e excluir usuarios, definir perfis e
+  redefinir senhas; tambem podem gerenciar racks, switches, patch panels,
+  pontos de rede, certificacoes e itens/configuracao da BOM pela rota `/admin`.
 - Ainda **nao** implementado (proximos turnos, seguindo a Prioridade 2-5 da
-  especificacao): inventario de rede (pontos, patch panels, switches,
-  cabos), geracao de etiquetas, registro de testes PASS/FAIL, metricas
-  detalhadas, BOM/custos, central de ajuda. O painel inicial mostra contagens
-  do inventario, certificacoes e itens da BOM. O schema do banco
-  (`prisma/schema.prisma`) ja modela essas tabelas para nao exigir retrabalho.
+  especificacao): geracao de etiquetas, metricas detalhadas e central de ajuda.
+  O painel inicial mostra contagens do inventario, certificacoes e itens da
+  BOM. O schema do banco (`prisma/schema.prisma`) ja modela esses dados.
 - Icones do PWA (`public/icons/icon-192.png`, `icon-512.png`) sao referencias
   no manifest mas os arquivos de imagem ainda precisam ser gerados/adicionados.
 

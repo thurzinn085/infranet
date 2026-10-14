@@ -40,9 +40,16 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-ink-100">
       <header className="flex items-center justify-between border-b border-line px-6 py-4">
         <p className="font-semibold text-ink-900">InfraNet</p>
-        <form action={logout}>
-          <button className="text-sm text-ink-500 hover:text-ink-900">Sair</button>
-        </form>
+        <div className="flex items-center gap-4">
+          {user.role === "ADMIN" && (
+            <a href="/admin" className="text-sm font-medium text-ink-700 hover:text-ink-900">
+              Administração
+            </a>
+          )}
+          <form action={logout}>
+            <button className="text-sm text-ink-500 hover:text-ink-900">Sair</button>
+          </form>
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10">

@@ -5,7 +5,7 @@
 // com frequencia — cachear isso poderia mostrar dados desatualizados ou
 // de outro usuario.
 
-const CACHE_NAME = "infranet-shell-v1";
+const CACHE_NAME = "infranet-shell-v2";
 const SHELL_URLS = ["/login"];
 
 self.addEventListener("install", (event) => {
@@ -30,20 +30,19 @@ self.addEventListener("fetch", (event) => {
   // Nunca intercepta chamadas de API — sempre vao direto para a rede.
   if (url.pathname.startsWith("/api/")) return;
 
-  if (event.request.method !== "GET") return;
+  if (event.request.method !== "GET" || url.pathname !== "/login") return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
+    fetch(event.request).then((response) => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+      }
+      return response;
+    }).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      throw new Error("A página de login não está disponível offline.");
     })
   );
 });
