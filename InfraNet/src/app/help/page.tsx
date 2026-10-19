@@ -43,55 +43,89 @@ export default async function HelpPage() {
     <main className="min-h-screen bg-ink-100">
       <header className="flex items-center justify-between border-b border-line bg-white px-6 py-4">
         <Link href="/dashboard" className="font-semibold text-ink-900">InfraNet</Link>
-        <Link href="/dashboard" className="text-sm font-medium text-ink-700 hover:text-ink-900">
+        <Link href="/dashboard" className="rounded-md px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-100 hover:text-ink-900">
           Voltar ao painel
         </Link>
       </header>
-      <div className="mx-auto max-w-4xl space-y-6 px-6 py-10">
-        <div>
+      <div className="mx-auto max-w-5xl space-y-8 px-6 py-8 sm:py-10">
+        <section className="rounded-xl border border-line bg-white p-6 shadow-card sm:p-8">
           <p className="text-sm font-medium text-ink-500">Ajuda do InfraNet</p>
-          <h1 className="mt-1 text-3xl font-semibold text-ink-900">Central de ajuda</h1>
-          <p className="mt-2 text-ink-600">
-            Um guia rápido para cadastrar e organizar sua infraestrutura.
-            {user.role === "ADMIN" && " Como administrador, você também pode gerenciar as contas de usuários."}
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">Central de ajuda</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+            Guias diretos para cadastrar seus equipamentos, organizar os pontos de rede e estimar materiais.
+            {user.role === "ADMIN" && " Administradores também podem gerenciar as contas de usuários."}
           </p>
-        </div>
+          <div className="mt-6 grid gap-3 border-t border-line pt-5 sm:grid-cols-3">
+            <HelpStep number="01" title="Cadastre a estrutura" text="Comece pelos racks e equipamentos." />
+            <HelpStep number="02" title="Ligue os pontos" text="Associe cabos, portas e locais." />
+            <HelpStep number="03" title="Acompanhe o projeto" text="Registre testes e monte a BOM." />
+          </div>
+        </section>
 
         {user.role === "ADMIN" && (
-          <section className="rounded-lg border border-line bg-white p-5 shadow-card">
-            <h2 className="text-lg font-semibold text-ink-900">Usuários</h2>
-            <p className="mt-2 text-sm text-ink-600">
-              Na seção Usuários, crie contas, altere dados e perfis, redefina senhas ou exclua contas.
-              Não é possível remover o próprio perfil nem excluir o último administrador.
-            </p>
-          </section>
-        )}
-
-        {sections.map((section) => (
-          <section key={section.id} className="rounded-lg border border-line bg-white p-5 shadow-card">
+          <section id="users" className="rounded-lg border border-line bg-white p-5 shadow-card">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-ink-900">{section.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-ink-600">{section.description}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Acesso administrativo</p>
+                <h2 className="mt-1 text-lg font-semibold text-ink-900">Usuários</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-600">
+                  Crie contas, altere dados e perfis, redefina senhas ou exclua contas.
+                  Não é possível remover o próprio perfil nem excluir o último administrador.
+                </p>
               </div>
-              <Link
-                href={`/admin?section=${section.id}`}
-                className="shrink-0 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-ink-900"
-              >
-                Abrir seção
+              <Link href="/admin?section=users" className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-800">
+                Gerenciar usuários
               </Link>
             </div>
           </section>
-        ))}
+        )}
 
-        <section className="rounded-lg border border-line bg-white p-5 shadow-card">
-          <h2 className="text-lg font-semibold text-ink-900">Dashboard</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">
-            O dashboard resume quantos itens existem na sua infraestrutura e oferece atalhos para cada seção.
-            O perfil administrador vê os dados de todos; uma conta normal vê apenas os próprios dados.
+        <div>
+          <div className="mb-4">
+            <p className="text-sm font-medium text-ink-500">Guia por seção</p>
+            <h2 className="mt-1 text-xl font-semibold text-ink-900">O que você pode fazer</h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {sections.map((section, index) => (
+              <section key={section.id} id={section.id} className="flex flex-col rounded-lg border border-line bg-white p-5 shadow-card">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="text-lg font-semibold text-ink-900">{section.title}</h3>
+                </div>
+                <p className="mt-3 flex-1 text-sm leading-6 text-ink-600">{section.description}</p>
+                <Link
+                  href={`/admin?section=${section.id}`}
+                  className="mt-5 inline-flex w-fit items-center gap-2 text-sm font-semibold text-brand-700 transition hover:text-brand-800"
+                >
+                  Abrir seção <span aria-hidden="true">→</span>
+                </Link>
+              </section>
+            ))}
+          </div>
+        </div>
+
+        <section className="rounded-lg border border-line bg-ink-900 p-5 text-white sm:p-6">
+          <h2 className="text-lg font-semibold">Dashboard</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-300">
+            O painel reúne os principais totais e atalhos para as seções. Administradores veem os dados de todos;
+            contas normais veem apenas os próprios dados.
           </p>
         </section>
       </div>
     </main>
+  );
+}
+
+function HelpStep({ number, title, text }: { number: string; title: string; text: string }) {
+  return (
+    <div className="flex gap-3">
+      <span className="pt-0.5 text-xs font-semibold tabular-nums text-brand-700">{number}</span>
+      <div>
+        <p className="text-sm font-semibold text-ink-900">{title}</p>
+        <p className="mt-1 text-xs leading-5 text-ink-500">{text}</p>
+      </div>
+    </div>
   );
 }

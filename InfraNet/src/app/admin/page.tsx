@@ -34,9 +34,9 @@ import {
 } from "./actions";
 
 const inputClass =
-  "min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink-900";
+  "min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink-900 outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-100";
 const buttonClass =
-  "rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-ink-900";
+  "rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2";
 
 export default async function AdminPage({
   searchParams,
@@ -121,33 +121,39 @@ export default async function AdminPage({
           </p>
         </div>
 
-        <nav aria-label="Seções de gerenciamento" className="flex gap-2 overflow-x-auto rounded-lg border border-line bg-white p-2">
-          {availableSections.map((item) => (
-            <Link
-              key={item.id}
-              href={`/admin?section=${item.id}`}
-              aria-current={section === item.id ? "page" : undefined}
-              className={`shrink-0 rounded-md px-4 py-2 text-sm font-medium transition ${
-                section === item.id
-                  ? "bg-brand-700 text-white"
-                  : "text-ink-700 hover:bg-ink-100"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+          <nav aria-label="Seções de gerenciamento" className="flex gap-2 overflow-x-auto rounded-lg border border-line bg-white p-2 lg:sticky lg:top-6 lg:flex-col lg:overflow-visible">
+            <p className="hidden px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-ink-500 lg:block">
+              Gerenciamento
+            </p>
+            {availableSections.map((item) => (
+              <Link
+                key={item.id}
+                href={`/admin?section=${item.id}`}
+                aria-current={section === item.id ? "page" : undefined}
+                className={`flex shrink-0 items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition ${
+                  section === item.id
+                    ? "bg-brand-700 text-white shadow-sm"
+                    : "text-ink-700 hover:bg-ink-100"
+                }`}
+              >
+                {item.label}
+                {section === item.id && <span aria-hidden="true">›</span>}
+              </Link>
+            ))}
+          </nav>
 
-        {searchParams.notice && (
-          <p role="status" className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-900">
-            {searchParams.notice}
-          </p>
-        )}
-        {searchParams.error && (
-          <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">
-            {searchParams.error}
-          </p>
-        )}
+          <div className="min-w-0 space-y-6">
+            {searchParams.notice && (
+              <p role="status" className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-900">
+                {searchParams.notice}
+              </p>
+            )}
+            {searchParams.error && (
+              <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+                {searchParams.error}
+              </p>
+            )}
 
         {section === "users" && user.role === Role.ADMIN && <Section title={`Usuários (${users.length})`} description="Crie contas e altere nome, e-mail e nível de acesso.">
           <form action={createUser} className="grid gap-3 rounded-md bg-ink-100 p-4 sm:grid-cols-2 lg:grid-cols-6">
@@ -331,14 +337,23 @@ export default async function AdminPage({
           </div>
         </Section>}
 
-        {section === "bom" && <Section id="bom" title={`Materiais / BOM (${bomItems.length})`} description="Lista de materiais do projeto: quantidade × custo por unidade = custo estimado.">
-          <div className="mb-5 rounded-md border border-brand-200 bg-brand-50 p-4 text-sm text-ink-800">
-            <h3 className="font-semibold">Como montar sua BOM</h3>
-            <ol className="mt-2 list-inside list-decimal space-y-1">
-              <li>Escolha um material de referência ou cadastre um material próprio.</li>
-              <li>Informe a quantidade e confira o custo por unidade em reais.</li>
-              <li>Adicione os itens e acompanhe o subtotal e a estimativa com margem.</li>
-            </ol>
+        {section === "bom" && <Section id="bom" title={`Materiais / BOM (${bomItems.length})`} description="Monte a lista do projeto e acompanhe quanto cada item representa no orçamento.">
+          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-line bg-ink-50 p-4">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-ink-700 ring-1 ring-line">1</span>
+              <p className="mt-3 text-sm font-semibold text-ink-900">Escolha o material</p>
+              <p className="mt-1 text-xs leading-5 text-ink-500">Busque no catálogo ou informe um item próprio.</p>
+            </div>
+            <div className="rounded-md border border-line bg-ink-50 p-4">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-ink-700 ring-1 ring-line">2</span>
+              <p className="mt-3 text-sm font-semibold text-ink-900">Preencha quantidade e preço</p>
+              <p className="mt-1 text-xs leading-5 text-ink-500">O preço é por unidade; use sua cotação atual.</p>
+            </div>
+            <div className="rounded-md border border-line bg-ink-50 p-4">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-ink-700 ring-1 ring-line">3</span>
+              <p className="mt-3 text-sm font-semibold text-ink-900">Confira o orçamento</p>
+              <p className="mt-1 text-xs leading-5 text-ink-500">Subtotal = quantidade × preço; a margem soma uma reserva ao total.</p>
+            </div>
           </div>
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             <article className="rounded-md bg-ink-100 p-4">
@@ -350,27 +365,31 @@ export default async function AdminPage({
             <article className="rounded-md bg-ink-100 p-4">
               <p className="text-sm text-ink-500">Subtotal (sem margem)</p>
               <p className="mt-1 text-xl font-semibold text-ink-900">
-                {bomSubtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                {bomItems.length
+                  ? bomSubtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                  : "Adicione materiais"}
               </p>
             </article>
             <article className="rounded-md bg-ink-100 p-4">
               <p className="text-sm text-ink-500">Total estimado com margem ({bomMargin}%)</p>
               <p className="mt-1 text-xl font-semibold text-ink-900">
-                {bomTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                {bomItems.length
+                  ? bomTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                  : "Adicione materiais"}
               </p>
             </article>
           </div>
-          <form action={updateBomMargin} className="mb-4 flex flex-wrap items-end gap-3 rounded-md bg-ink-100 p-4">
+          <form action={updateBomMargin} className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-line bg-ink-50 p-4">
             <Field
               name="marginPercent"
-              label="Margem adicional sobre o subtotal (%)"
+              label="Reserva adicional sobre o subtotal (%)"
               type="number"
               min="0"
               step="any"
               defaultValue={bomSettings?.marginPercent ?? 0}
               required
             />
-            <button className={buttonClass}>Salvar margem</button>
+            <button className={buttonClass}>Atualizar total</button>
           </form>
           <BomItemForm action={createBomItem} />
           <div className="mt-6 overflow-x-auto rounded-md border border-line">
@@ -408,38 +427,59 @@ export default async function AdminPage({
               </table>
             </div>
           </div>
-          <div className="mt-4 space-y-3">
-            {bomItems.map((item) => (
-              <details key={item.id} className="rounded-md border border-line p-3">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-                  <span>
-                    <span className="block font-medium text-ink-900">{item.name}</span>
-                    <span className="text-sm text-ink-500">
-                      {item.quantity} {item.unit} × {item.estimatedCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/{item.unit}
-                      {" · "}
-                      Total: {(item.quantity * item.estimatedCost).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </span>
-                  </span>
-                  <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
-                </summary>
-                <div className="mt-4 grid gap-2 border-t border-line pt-4 lg:grid-cols-[1fr_auto]">
-                  <form action={updateBomItem} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                    <input type="hidden" name="id" value={item.id} />
-                    <Field name="name" label="Material" defaultValue={item.name} required />
-                    <Field name="unit" label="Unidade" defaultValue={item.unit} required />
-                    <Field name="quantity" label="Quantidade" type="number" min="0.01" step="any" defaultValue={item.quantity} required />
-                    <Field name="estimatedCost" label="Custo estimado" type="number" min="0" step="any" defaultValue={item.estimatedCost} required />
-                    <button className={buttonClass}>Salvar item</button>
-                  </form>
-                  <form action={deleteBomItem} className="flex items-end">
-                    <input type="hidden" name="id" value={item.id} />
-                    <ConfirmButton message={`Excluir o item ${item.name}?`}>Excluir</ConfirmButton>
-                  </form>
+          {bomItems.length > 0 ? (
+            <div className="mt-6 overflow-x-auto rounded-lg border border-line">
+              <div className="min-w-[720px]">
+                <div className="grid grid-cols-[minmax(230px,2fr)_100px_130px_140px_110px] gap-3 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-ink-500">
+                  <span>Material</span><span>Quantidade</span><span>Preço unitário</span><span>Total do item</span><span className="text-right">Ação</span>
                 </div>
-              </details>
-            ))}
-          </div>
+                {bomItems.map((item) => (
+                  <details key={item.id} className="group border-t border-line">
+                    <summary className="grid cursor-pointer list-none grid-cols-[minmax(230px,2fr)_100px_130px_140px_110px] items-center gap-3 px-4 py-4 text-sm transition hover:bg-ink-50 [&::-webkit-details-marker]:hidden">
+                      <span className="font-medium text-ink-900">{item.name}</span>
+                      <span className="text-ink-600">{item.quantity} {item.unit}</span>
+                      <span className="text-ink-600">{item.estimatedCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/{item.unit}</span>
+                      <span className="font-semibold tabular-nums text-ink-900">{(item.quantity * item.estimatedCost).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      <span className="text-right text-xs font-medium text-ink-600 group-open:text-ink-900">Editar <span aria-hidden="true">⌄</span></span>
+                    </summary>
+                    <div className="border-t border-line bg-ink-50 p-4">
+                      <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
+                        <form action={updateBomItem} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                          <input type="hidden" name="id" value={item.id} />
+                          <Field name="name" label="Material" defaultValue={item.name} required />
+                          <Field name="unit" label="Unidade" defaultValue={item.unit} required />
+                          <Field name="quantity" label="Quantidade" type="number" min="0.01" step="any" defaultValue={item.quantity} required />
+                          <Field name="estimatedCost" label="Preço por unidade (R$)" type="number" min="0" step="any" defaultValue={item.estimatedCost} required />
+                          <button className={buttonClass}>Salvar item</button>
+                        </form>
+                        <form action={deleteBomItem} className="flex items-end">
+                          <input type="hidden" name="id" value={item.id} />
+                          <ConfirmButton message={`Excluir o item ${item.name}?`}>Excluir</ConfirmButton>
+                        </form>
+                      </div>
+                    </div>
+                  </details>
+                ))}
+                <div className="grid grid-cols-[minmax(230px,2fr)_100px_130px_140px_110px] gap-3 border-t border-line bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-900">
+                  <span className="col-span-3 text-right">Subtotal</span><span className="tabular-nums">{bomSubtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span><span />
+                </div>
+                <div className="grid grid-cols-[minmax(230px,2fr)_100px_130px_140px_110px] gap-3 border-t border-line px-4 py-3 text-sm text-ink-600">
+                  <span className="col-span-3 text-right">Reserva ({bomMargin}%)</span><span className="tabular-nums">{(bomTotal - bomSubtotal).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span><span />
+                </div>
+                <div className="grid grid-cols-[minmax(230px,2fr)_100px_130px_140px_110px] gap-3 border-t border-line bg-brand-50 px-4 py-4 text-sm font-semibold text-ink-900">
+                  <span className="col-span-3 text-right">Total estimado</span><span className="tabular-nums">{bomTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span><span />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 rounded-lg border border-dashed border-ink-300 px-5 py-8 text-center">
+              <h3 className="font-semibold text-ink-900">Sua lista ainda está vazia</h3>
+              <p className="mt-1 text-sm text-ink-500">Adicione o primeiro material acima para começar a estimar os custos do projeto.</p>
+            </div>
+          )}
         </Section>}
+          </div>
+        </div>
       </div>
     </main>
   );

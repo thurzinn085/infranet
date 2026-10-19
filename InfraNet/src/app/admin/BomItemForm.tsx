@@ -5,9 +5,9 @@ import { bomCatalog } from "@/lib/catalogs";
 import { bomPriceReferences } from "@/lib/bom-reference";
 
 const inputClass =
-  "min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink-900";
+  "min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink-900 outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-100";
 const buttonClass =
-  "rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-ink-900";
+  "rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2";
 
 type Props = {
   action: (formData: FormData) => void | Promise<void>;
@@ -42,7 +42,7 @@ export default function BomItemForm({ action }: Props) {
         />
       </label>
       <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700 sm:col-span-2 lg:col-span-5">
-        Escolha um material de referência ou cadastre outro
+        Material do catálogo
         <select
           className={inputClass}
           value={selectedId}
@@ -55,7 +55,7 @@ export default function BomItemForm({ action }: Props) {
             setEstimatedCost(reference ? String(reference.estimatedCost) : "");
           }}
         >
-          <option value="">Outro material (preencha os dados)</option>
+          <option value="">Escolha um material ou selecione “Outro”</option>
           {filteredGroups.map((group) => (
             <optgroup key={group.category} label={group.category}>
               {group.items.map((item) => {
@@ -76,7 +76,7 @@ export default function BomItemForm({ action }: Props) {
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
-        Material
+        Nome do material
         <input
           name="name"
           className={inputClass}
@@ -98,7 +98,7 @@ export default function BomItemForm({ action }: Props) {
         </datalist>
       </label>
       <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
-        Unidade (m, unidade, caixa...)
+        Unidade de compra
         <input
           name="unit"
           className={inputClass}
@@ -121,7 +121,7 @@ export default function BomItemForm({ action }: Props) {
         />
       </label>
       <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
-        Custo por unidade (R$)
+        Preço por unidade (R$)
         <input
           name="estimatedCost"
           className={inputClass}
@@ -133,7 +133,7 @@ export default function BomItemForm({ action }: Props) {
           required
         />
       </label>
-      <button className={`${buttonClass} self-end`}>Adicionar à lista</button>
+      <button className={`${buttonClass} self-end`}>Adicionar material</button>
     </form>
   );
 }
