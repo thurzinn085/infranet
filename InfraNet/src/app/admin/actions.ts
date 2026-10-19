@@ -2,6 +2,7 @@
 
 import { CableCategory, Prisma, Role, TestResult } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
@@ -14,8 +15,24 @@ const optionalText = z.string().trim().max(500).transform((value) => value || nu
 const optionalId = z.string().trim().transform((value) => value || null);
 const portCountSchema = z.coerce.number().int().min(1).max(512);
 
+const adminSections = new Set([
+  "users",
+  "racks",
+  "switches",
+  "patch-panels",
+  "network-points",
+  "certifications",
+  "bom",
+]);
+
+function currentAdminSection() {
+  const referer = headers().get("referer");
+  const requestedSection = referer ? new URL(referer).searchParams.get("section") : null;
+  return requestedSection && adminSections.has(requestedSection) ? requestedSection : "racks";
+}
+
 function report(kind: "notice" | "error", message: string): never {
-  redirect(`/admin?${kind}=${encodeURIComponent(message)}`);
+  redirect(`/admin?section=${currentAdminSection()}&${kind}=${encodeURIComponent(message)}`);
 }
 
 async function requireAdmin() {
