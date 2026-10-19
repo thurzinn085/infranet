@@ -143,7 +143,7 @@ export default async function AdminPage({
             ))}
           </nav>
 
-          <div className="min-w-0 space-y-6">
+          <div key={section} className="admin-section-enter min-w-0 space-y-6">
             {searchParams.notice && (
               <p role="status" className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-900">
                 {searchParams.notice}
@@ -492,7 +492,7 @@ function Section({ id, title, description, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="admin-section-enter scroll-mt-6 rounded-lg border border-line bg-white p-5 shadow-card">
+    <section id={id} className="scroll-mt-6 rounded-lg border border-line bg-white p-5 shadow-card">
       <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
       <p className="mb-4 mt-1 text-sm text-ink-500">{description}</p>
       {children}
