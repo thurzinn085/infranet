@@ -43,30 +43,21 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-ink-100">
       <header className="flex items-center justify-between border-b border-line px-6 py-4">
         <p className="font-semibold text-ink-900">InfraNet</p>
-        <details className="group relative">
-          <summary
-            aria-label="Abrir menu"
-            className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-md text-2xl leading-none text-ink-700 hover:bg-ink-100 focus:outline-none focus:ring-2 focus:ring-ink-500 [&::-webkit-details-marker]:hidden"
+        <div className="flex items-center gap-2">
+          <Link
+            href="/help"
+            aria-label="Central de ajuda"
+            title="Central de ajuda"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink-300 text-lg font-semibold text-ink-700 hover:bg-ink-100 focus:outline-none focus:ring-2 focus:ring-ink-500"
           >
-            ⋮
-          </summary>
-          <nav
-            aria-label="Menu principal"
-            className="absolute right-0 top-12 z-10 min-w-48 rounded-md border border-line bg-white p-1 shadow-lg"
-          >
-            <a
-              href="/admin"
-              className="block rounded px-3 py-2 text-sm text-ink-900 hover:bg-ink-100"
-            >
-              {user.role === "ADMIN" ? "Administração" : "Minha infraestrutura"}
-            </a>
-            <form action={logout}>
-              <button className="block w-full rounded px-3 py-2 text-left text-sm text-ink-700 hover:bg-ink-100">
-                Sair
-              </button>
-            </form>
-          </nav>
-        </details>
+            ?
+          </Link>
+          <form action={logout}>
+            <button className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+              Sair
+            </button>
+          </form>
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10">
@@ -98,11 +89,11 @@ export default async function DashboardPage() {
         )}
 
         <section aria-label="Inventário" className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <MetricCard label="Pontos de rede" value={networkPoints} href="/admin#network-points" />
-          <MetricCard label="Racks" value={racks} href="/admin#racks" />
-          <MetricCard label="Switches" value={switches} href="/admin#switches" />
-          <MetricCard label="Patch panels" value={patchPanels} href="/admin#patch-panels" />
-          <MetricCard label="Itens na BOM" value={bomItems} href="/admin#bom" />
+          <MetricCard label="Pontos de rede" value={networkPoints} href="/admin?section=network-points" />
+          <MetricCard label="Racks" value={racks} href="/admin?section=racks" />
+          <MetricCard label="Switches" value={switches} href="/admin?section=switches" />
+          <MetricCard label="Patch panels" value={patchPanels} href="/admin?section=patch-panels" />
+          <MetricCard label="Itens na BOM" value={bomItems} href="/admin?section=bom" />
         </section>
 
         <section aria-labelledby="certifications-heading" className="mt-10">
@@ -113,9 +104,9 @@ export default async function DashboardPage() {
             <p className="text-sm text-ink-500">{totalTests} no total</p>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <MetricCard label="Aprovados" value={passedTests} href="/admin#certifications" />
-            <MetricCard label="Pendentes" value={pendingTests} href="/admin#certifications" />
-            <MetricCard label="Reprovados" value={failedTests} href="/admin#certifications" />
+            <MetricCard label="Aprovados" value={passedTests} href="/admin?section=certifications" />
+            <MetricCard label="Pendentes" value={pendingTests} href="/admin?section=certifications" />
+            <MetricCard label="Reprovados" value={failedTests} href="/admin?section=certifications" />
           </div>
         </section>
       </main>

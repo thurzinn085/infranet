@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, normalizeRole } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { switchModelSuggestions } from "@/lib/catalogs";
+import { switchPortCountSuggestions, switchTypeSuggestions } from "@/lib/catalogs";
 import { bomPriceReferences } from "@/lib/bom-reference";
 import BomItemForm from "./BomItemForm";
 import ConfirmButton from "./ConfirmButton";
@@ -94,12 +94,18 @@ export default async function AdminPage({
     <main className="min-h-screen bg-ink-100">
       <header className="flex items-center justify-between border-b border-line bg-white px-6 py-4">
         <a href="/dashboard" className="font-semibold text-ink-900">InfraNet</a>
-        <a href="/dashboard" className="text-sm text-ink-500 hover:text-ink-900">Voltar ao painel</a>
+        <div className="flex items-center gap-4">
+          <Link href="/help" className="text-sm font-medium text-ink-700 hover:text-ink-900">Central de ajuda</Link>
+          <a href="/dashboard" className="text-sm text-ink-500 hover:text-ink-900">Voltar ao painel</a>
+        </div>
       </header>
 
       <div className="mx-auto max-w-6xl space-y-6 px-6 py-10">
         <datalist id="switch-model-suggestions">
-          {switchModelSuggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+          {switchTypeSuggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+        </datalist>
+        <datalist id="switch-port-count-suggestions">
+          {switchPortCountSuggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
         </datalist>
         <div>
           <p className="text-sm font-medium text-ink-500">
@@ -577,8 +583,8 @@ function DeviceSection({
     <Section id={id} title={title} description="Ajuste nome, modelo, capacidade de portas e rack associado.">
       <form action={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Field name="name" label="Nome" required />
-        {showModel && <Field name="model" label="Modelo (escolha ou digite)" suggestions={switchModelSuggestions} />}
-        <Field name="portCount" label="Quantidade de portas" type="number" min="1" max="512" required />
+        {showModel && <Field name="model" label="Tipo/modelo (ex.: Smart, L2, PoE)" suggestions={switchTypeSuggestions} />}
+        <Field name="portCount" label="Quantidade de portas" type="number" min="1" max="512" suggestions={switchPortCountSuggestions} required />
         <RackSelect racks={racks} />
         <button className={buttonClass}>Adicionar</button>
       </form>
@@ -598,8 +604,8 @@ function DeviceSection({
               <form action={updateAction} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                 <input type="hidden" name="id" value={device.id} />
                 <Field name="name" label="Nome" defaultValue={device.name} required />
-                {showModel && <Field name="model" label="Modelo (escolha ou digite)" defaultValue={device.model ?? ""} suggestions={switchModelSuggestions} />}
-                <Field name="portCount" label="Portas" type="number" min="1" max="512" defaultValue={device.portCount} required />
+                {showModel && <Field name="model" label="Tipo/modelo (ex.: Smart, L2, PoE)" defaultValue={device.model ?? ""} suggestions={switchTypeSuggestions} />}
+                <Field name="portCount" label="Portas" type="number" min="1" max="512" defaultValue={device.portCount} suggestions={switchPortCountSuggestions} required />
                 <RackSelect racks={racks} defaultValue={device.rackId ?? ""} />
                 <button className={buttonClass}>Salvar</button>
               </form>

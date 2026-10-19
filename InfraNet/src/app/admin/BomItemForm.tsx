@@ -47,11 +47,12 @@ export default function BomItemForm({ action }: Props) {
           className={inputClass}
           value={selectedId}
           onChange={(event) => {
-            const item = bomPriceReferences.find((reference) => reference.id === event.target.value);
+            const selectedItem = catalogItems.find((catalogItem) => catalogItem.id === event.target.value);
+            const reference = bomPriceReferences.find((price) => price.id === event.target.value);
             setSelectedId(event.target.value);
-            setName(item?.name ?? "");
-            setUnit(item?.unit ?? "");
-            setEstimatedCost(item ? String(item.estimatedCost) : "");
+            setName(selectedItem?.name ?? "");
+            setUnit(selectedItem?.unit ?? "");
+            setEstimatedCost(reference ? String(reference.estimatedCost) : "");
           }}
         >
           <option value="">Outro material (preencha os dados)</option>
