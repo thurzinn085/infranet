@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser, normalizeRole } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { switchModelSuggestions } from "@/lib/catalogs";
 import { bomPriceReferences } from "@/lib/bom-reference";
 import BomItemForm from "./BomItemForm";
 import ConfirmButton from "./ConfirmButton";
@@ -97,6 +98,9 @@ export default async function AdminPage({
       </header>
 
       <div className="mx-auto max-w-6xl space-y-6 px-6 py-10">
+        <datalist id="switch-model-suggestions">
+          {switchModelSuggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+        </datalist>
         <div>
           <p className="text-sm font-medium text-ink-500">
             {user.role === Role.ADMIN ? "Área administrativa" : "Sua infraestrutura"}
@@ -451,12 +455,18 @@ function Section({ id, title, description, children }: {
 }
 
 function Field({
-  name, label, ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { name: string; label: string }) {
+  name, label, suggestions, ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  name: string;
+  label: string;
+  suggestions?: readonly string[];
+}) {
+  const listId = suggestions ? "switch-model-suggestions" : undefined;
+
   return (
     <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
       {label}
-      <input name={name} className={inputClass} {...props} />
+      <input name={name} list={listId} className={inputClass} {...props} />
     </label>
   );
 }
@@ -498,9 +508,18 @@ function resultLabel(result: TestResult) {
 }
 
 function CableSelect({ defaultValue = "CAT6" }: { defaultValue?: CableCategory }) {
+  const labels: Record<CableCategory, string> = {
+    CAT5E: "CAT5e — cobre",
+    CAT6: "CAT6 — cobre",
+    CAT6A: "CAT6A — cobre",
+    FIBRA_OM3: "Fibra OM3 — multimodo",
+    FIBRA_OM4: "Fibra OM4 — multimodo",
+    FIBRA_OS2: "Fibra OS2 — monomodo",
+  };
+
   return (
     <SelectField name="cableCategory" label="Categoria do cabo" defaultValue={defaultValue}>
-      {Object.values(CableCategory).map((category) => <option key={category} value={category}>{category.replace("_", " ")}</option>)}
+      {Object.values(CableCategory).map((category) => <option key={category} value={category}>{labels[category]}</option>)}
     </SelectField>
   );
 }
@@ -558,7 +577,7 @@ function DeviceSection({
     <Section id={id} title={title} description="Ajuste nome, modelo, capacidade de portas e rack associado.">
       <form action={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Field name="name" label="Nome" required />
-        {showModel && <Field name="model" label="Modelo" />}
+        {showModel && <Field name="model" label="Modelo (escolha ou digite)" suggestions={switchModelSuggestions} />}
         <Field name="portCount" label="Quantidade de portas" type="number" min="1" max="512" required />
         <RackSelect racks={racks} />
         <button className={buttonClass}>Adicionar</button>
@@ -579,7 +598,7 @@ function DeviceSection({
               <form action={updateAction} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                 <input type="hidden" name="id" value={device.id} />
                 <Field name="name" label="Nome" defaultValue={device.name} required />
-                {showModel && <Field name="model" label="Modelo" defaultValue={device.model ?? ""} />}
+                {showModel && <Field name="model" label="Modelo (escolha ou digite)" defaultValue={device.model ?? ""} suggestions={switchModelSuggestions} />}
                 <Field name="portCount" label="Portas" type="number" min="1" max="512" defaultValue={device.portCount} required />
                 <RackSelect racks={racks} defaultValue={device.rackId ?? ""} />
                 <button className={buttonClass}>Salvar</button>

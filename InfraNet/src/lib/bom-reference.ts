@@ -1,6 +1,6 @@
 export const bomPriceReferences = [
   {
-    id: "cat6-meter",
+    id: "cable-cat6-utp",
     name: "Cabo de rede CAT6 UTP WEC (por metro)",
     unit: "m",
     estimatedCost: 4.43,
@@ -9,7 +9,7 @@ export const bomPriceReferences = [
       "https://www.kabum.com.br/produto/904570/caixa-cabo-de-rede-305-metros-cat6-utp-4p-100-cobre-4px24awg-cm-int-wec-preto",
   },
   {
-    id: "cat6-box",
+    id: "cable-cat6-box",
     name: "Cabo de rede CAT6 UTP WEC (caixa com 305 m)",
     unit: "caixa",
     estimatedCost: 1349.99,
@@ -18,7 +18,7 @@ export const bomPriceReferences = [
       "https://www.kabum.com.br/produto/904570/caixa-cabo-de-rede-305-metros-cat6-utp-4p-100-cobre-4px24awg-cm-int-wec-preto",
   },
   {
-    id: "patch-panel-24-cat6",
+    id: "patch-panel-cat6-24",
     name: "Patch panel CAT6 de 24 portas",
     unit: "unidade",
     estimatedCost: 149,

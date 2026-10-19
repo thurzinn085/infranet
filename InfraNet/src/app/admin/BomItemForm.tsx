@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { bomCatalog } from "@/lib/catalogs";
 import { bomPriceReferences } from "@/lib/bom-reference";
 
 const inputClass =
@@ -17,9 +18,29 @@ export default function BomItemForm({ action }: Props) {
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
+  const [search, setSearch] = useState("");
+  const filteredGroups = bomCatalog
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+        item.name.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
+  const catalogItems = bomCatalog.flatMap((group) => group.items);
 
   return (
     <form action={action} className="grid gap-3 rounded-md bg-ink-100 p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700 sm:col-span-2 lg:col-span-5">
+        Buscar no catálogo
+        <input
+          className={inputClass}
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Ex.: CAT5e, fibra, keystone, switch PoE..."
+        />
+      </label>
       <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700 sm:col-span-2 lg:col-span-5">
         Escolha um material de referência ou cadastre outro
         <select
@@ -34,13 +55,22 @@ export default function BomItemForm({ action }: Props) {
           }}
         >
           <option value="">Outro material (preencha os dados)</option>
-          {bomPriceReferences.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name} — {item.estimatedCost.toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              })}/{item.unit}
-            </option>
+          {filteredGroups.map((group) => (
+            <optgroup key={group.category} label={group.category}>
+              {group.items.map((item) => {
+                const reference = bomPriceReferences.find((price) => price.id === item.id);
+                return (
+                  <option key={item.id} value={item.id}>
+                    {item.name}{reference
+                      ? ` — referência ${reference.estimatedCost.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}/${reference.unit}`
+                      : ""}
+                  </option>
+                );
+              })}
+            </optgroup>
           ))}
         </select>
       </label>
@@ -50,10 +80,21 @@ export default function BomItemForm({ action }: Props) {
           name="name"
           className={inputClass}
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          list="bom-material-suggestions"
+          onChange={(event) => {
+            setName(event.target.value);
+            if (selectedId) {
+              setSelectedId("");
+              setUnit("");
+              setEstimatedCost("");
+            }
+          }}
           required
           maxLength={120}
         />
+        <datalist id="bom-material-suggestions">
+          {catalogItems.map((item) => <option key={item.id} value={item.name} />)}
+        </datalist>
       </label>
       <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
         Unidade (m, unidade, caixa...)
