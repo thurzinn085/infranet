@@ -131,7 +131,7 @@ export default async function AdminPage({
                 key={item.id}
                 href={`/admin?section=${item.id}`}
                 aria-current={section === item.id ? "page" : undefined}
-                className={`flex shrink-0 items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition ${
+                className={`flex shrink-0 items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition duration-200 hover:-translate-y-px ${
                   section === item.id
                     ? "bg-brand-700 text-white shadow-sm"
                     : "text-ink-700 hover:bg-ink-100"
@@ -492,7 +492,7 @@ function Section({ id, title, description, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-6 rounded-lg border border-line bg-white p-5 shadow-card">
+    <section id={id} className="admin-section-enter scroll-mt-6 rounded-lg border border-line bg-white p-5 shadow-card">
       <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
       <p className="mb-4 mt-1 text-sm text-ink-500">{description}</p>
       {children}
