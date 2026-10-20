@@ -63,7 +63,7 @@ export default async function HelpPage() {
         </section>
 
         {user.role === "ADMIN" && (
-          <section id="users" className="rounded-lg border border-line bg-white p-5 shadow-card">
+          <section id="users" className="rounded-lg border border-line bg-white p-5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-md motion-reduce:transform-none">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Acesso administrativo</p>
@@ -87,7 +87,7 @@ export default async function HelpPage() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {sections.map((section, index) => (
-              <section key={section.id} id={section.id} className="flex flex-col rounded-lg border border-line bg-white p-5 shadow-card">
+              <section key={section.id} id={section.id} className="flex flex-col rounded-lg border border-line bg-white p-5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-md motion-reduce:transform-none">
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700">
                     {String(index + 1).padStart(2, "0")}

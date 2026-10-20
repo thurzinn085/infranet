@@ -125,7 +125,7 @@ export default async function DashboardPage() {
             <MetricCard label="Switches" value={switches} href="/admin?section=switches" detail="Portas e equipamentos" />
             <MetricCard label="Patch panels" value={patchPanels} href="/admin?section=patch-panels" detail="Painéis e portas" />
             <MetricCard label="Materiais / BOM" value={bomItems} href="/admin?section=bom" detail="Itens e estimativa de custo" />
-            <Link href="/help" className="group flex min-h-32 flex-col justify-between rounded-lg border border-line bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ink-500">
+            <Link href="/help" className="group flex min-h-32 flex-col justify-between rounded-lg border border-line bg-white p-5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ink-500 motion-reduce:transform-none">
               <span className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-lg font-semibold text-ink-700">?</span>
               <span>
                 <span className="block font-semibold text-ink-900">Central de ajuda</span>
@@ -182,7 +182,7 @@ function MetricCard({ label, value, href, detail }: {
   detail: string;
 }) {
   return (
-    <Link href={href} className="group rounded-lg border border-line bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ink-500">
+    <Link href={href} className="group rounded-lg border border-line bg-white p-5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ink-500 motion-reduce:transform-none">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-ink-600">{label}</p>
