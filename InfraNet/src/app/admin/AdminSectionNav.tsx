@@ -18,7 +18,13 @@ export default function AdminSectionNav({
   const navRef = useRef<HTMLElement>(null);
   const linkRefs = useRef(new Map<string, HTMLAnchorElement>());
   const [selectedSection, setSelectedSection] = useState(activeSection);
-  const [marker, setMarker] = useState({ x: 0, y: 0, visible: false });
+  const [marker, setMarker] = useState({
+    x: 0,
+    y: 0,
+    width: 3,
+    height: 0,
+    visible: false,
+  });
 
   useLayoutEffect(() => {
     setSelectedSection(activeSection);
@@ -35,8 +41,12 @@ export default function AdminSectionNav({
       const isVertical = window.matchMedia("(min-width: 1024px)").matches;
 
       setMarker({
-        x: isVertical ? 17 : linkRect.left - navRect.left + linkRect.width / 2,
-        y: isVertical ? linkRect.top - navRect.top + linkRect.height / 2 : navRect.height - 13,
+        x: isVertical
+          ? linkRect.left - navRect.left
+          : linkRect.left - navRect.left + (linkRect.width - 26) / 2,
+        y: isVertical ? linkRect.top - navRect.top + 4 : navRect.height - 5,
+        width: isVertical ? 3 : 26,
+        height: isVertical ? linkRect.height - 8 : 3,
         visible: true,
       });
     };
@@ -64,9 +74,11 @@ export default function AdminSectionNav({
       </p>
       <span
         aria-hidden="true"
-        className="admin-nav-marker pointer-events-none absolute z-10 h-2 w-2 rounded-full bg-brand-600 opacity-0 shadow-[0_0_12px_rgba(37,99,235,0.9)] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+        className="admin-nav-marker pointer-events-none absolute left-0 top-0 z-10 rounded-full bg-brand-600 opacity-0 shadow-[0_0_12px_rgba(37,99,235,0.9)] transition-[height,transform,opacity,width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
         style={{
-          transform: `translate3d(${marker.x - 4}px, ${marker.y - 4}px, 0)`,
+          width: marker.width,
+          height: marker.height,
+          transform: `translate3d(${marker.x}px, ${marker.y}px, 0)`,
           opacity: marker.visible ? 1 : 0,
         }}
       />
@@ -80,7 +92,7 @@ export default function AdminSectionNav({
           href={`/admin?section=${item.id}`}
           aria-current={selectedSection === item.id ? "page" : undefined}
           onClick={() => setSelectedSection(item.id)}
-          className={`group flex shrink-0 items-center gap-3 rounded-md border-l-[3px] px-3 py-2.5 text-sm font-medium transition duration-200 hover:-translate-y-px ${
+          className={`group flex shrink-0 items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition duration-200 hover:-translate-y-px ${
             selectedSection === item.id
               ? "border-brand-700 bg-brand-50 text-brand-800 shadow-sm ring-1 ring-inset ring-brand-200"
               : "border-transparent text-ink-700 hover:bg-ink-100"
