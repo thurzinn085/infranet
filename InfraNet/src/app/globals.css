@@ -122,6 +122,11 @@ body {
   backdrop-filter: blur(12px);
 }
 
+.admin-console .admin-nav-marker {
+  background-color: #34d399;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.9), 0 0 24px rgba(16, 185, 129, 0.45);
+}
+
 .admin-console nav[aria-label="Seções de gerenciamento"] a[aria-current="page"] {
   border-color: #10b981;
   background: linear-gradient(100deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.045));
