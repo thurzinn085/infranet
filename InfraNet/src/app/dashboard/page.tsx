@@ -40,10 +40,16 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-ink-100">
+    <div className={`min-h-screen ${user.role === "ADMIN" ? "admin-console" : "bg-ink-100"}`}>
       <header className="flex items-center justify-between border-b border-line px-6 py-4">
         <Link href="/dashboard" className="font-semibold tracking-tight text-ink-900">InfraNet</Link>
         <div className="flex items-center gap-2">
+          {user.role === "ADMIN" && (
+            <span className="mr-2 hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300 sm:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+              Admin
+            </span>
+          )}
           <Link
             href="/help"
             aria-label="Central de ajuda"
@@ -65,7 +71,9 @@ export default async function DashboardPage() {
           <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
             <div>
               <p className="text-sm font-medium text-ink-500">
-                {user.role === "ADMIN" ? "Visão geral · Administrador" : "Visão geral · Minha infraestrutura"}
+                {user.role === "ADMIN" ? (
+                  <span className="font-mono uppercase tracking-[0.16em]">System overview · Admin</span>
+                ) : "Visão geral · Minha infraestrutura"}
               </p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
                 Olá, {user.firstName}.

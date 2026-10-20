@@ -91,10 +91,16 @@ export default async function AdminPage({
   const bomTotal = bomSubtotal * (1 + bomMargin / 100);
 
   return (
-    <main className="min-h-screen bg-ink-100">
+    <main className={`min-h-screen ${user.role === Role.ADMIN ? "admin-console" : "bg-ink-100"}`}>
       <header className="flex items-center justify-between border-b border-line bg-white px-6 py-4">
-        <a href="/dashboard" className="font-semibold text-ink-900">InfraNet</a>
+        <a href="/dashboard" className="font-semibold tracking-tight text-ink-900">InfraNet</a>
         <div className="flex items-center gap-4">
+          {user.role === Role.ADMIN && (
+            <span className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300 sm:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+              Admin console
+            </span>
+          )}
           <Link href="/help" className="text-sm font-medium text-ink-700 hover:text-ink-900">Central de ajuda</Link>
           <a href="/dashboard" className="text-sm text-ink-500 hover:text-ink-900">Voltar ao painel</a>
         </div>
@@ -108,8 +114,8 @@ export default async function AdminPage({
           {switchPortCountSuggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
         </datalist>
         <div>
-          <p className="text-sm font-medium text-ink-500">
-            {user.role === Role.ADMIN ? "Área administrativa" : "Sua infraestrutura"}
+          <p className={`text-sm font-medium text-ink-500 ${user.role === Role.ADMIN ? "font-mono uppercase tracking-[0.16em]" : ""}`}>
+            {user.role === Role.ADMIN ? "System / Access control" : "Sua infraestrutura"}
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink-900">
             {user.role === Role.ADMIN ? "Gerenciar sistema" : "Gerenciar minha infraestrutura"}

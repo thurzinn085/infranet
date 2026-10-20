@@ -20,17 +20,159 @@ body {
 @keyframes admin-section-enter {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    filter: blur(5px);
+    transform: translate3d(0, 16px, 0) scale(0.985);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 .admin-section-enter {
-  animation: admin-section-enter 220ms ease-out both;
+  animation: admin-section-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+  will-change: opacity, transform, filter;
+}
+
+.admin-console {
+  color: #e2e8f0;
+  background-color: #080d17;
+  background-image:
+    radial-gradient(ellipse at 12% 0%, rgba(16, 185, 129, 0.11), transparent 38rem),
+    linear-gradient(rgba(148, 163, 184, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.025) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+}
+
+.admin-console header {
+  position: relative;
+  z-index: 1;
+  border-color: #1e293b;
+  background-color: rgba(8, 13, 23, 0.88);
+  backdrop-filter: blur(14px);
+}
+
+.admin-console .bg-white {
+  background-color: #111827;
+}
+
+.admin-console .bg-ink-50,
+.admin-console .bg-ink-100 {
+  background-color: #0b1220;
+}
+
+.admin-console .border-line,
+.admin-console .border-ink-300 {
+  border-color: #263449;
+}
+
+.admin-console .text-ink-900 {
+  color: #f1f5f9;
+}
+
+.admin-console .text-ink-700,
+.admin-console .text-ink-600 {
+  color: #cbd5e1;
+}
+
+.admin-console .text-ink-500 {
+  color: #94a3b8;
+}
+
+.admin-console .text-ink-300 {
+  color: #64748b;
+}
+
+.admin-console .shadow-card {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), inset 0 1px rgba(148, 163, 184, 0.035);
+}
+
+.admin-console .bg-brand-700 {
+  background-color: #059669;
+}
+
+.admin-console .hover\:bg-brand-800:hover {
+  background-color: #047857;
+}
+
+.admin-console .bg-brand-50 {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.admin-console .text-brand-800,
+.admin-console .text-brand-700 {
+  color: #6ee7b7;
+}
+
+.admin-console .border-brand-700 {
+  border-color: #10b981;
+}
+
+.admin-console .ring-brand-200 {
+  --tw-ring-color: rgba(52, 211, 153, 0.22);
+}
+
+.admin-console nav[aria-label="Seções de gerenciamento"] {
+  border-color: #263449;
+  background-color: rgba(15, 23, 42, 0.76);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.admin-console nav[aria-label="Seções de gerenciamento"] a[aria-current="page"] {
+  border-color: #10b981;
+  background: linear-gradient(100deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.045));
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.12), 0 8px 24px rgba(16, 185, 129, 0.08);
+}
+
+.admin-console .admin-section-enter > section {
+  border-color: #263449;
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.98), rgba(11, 18, 32, 0.98));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2), inset 0 1px rgba(148, 163, 184, 0.04);
+  animation: admin-section-enter 460ms cubic-bezier(0.16, 1, 0.3, 1) 35ms both;
+}
+
+.admin-console .admin-section-enter details {
+  border-color: #263449;
+  background-color: rgba(15, 23, 42, 0.48);
+}
+
+.admin-console input,
+.admin-console select,
+.admin-console textarea {
+  border-color: #cbd5e1;
+}
+
+.admin-console input.bg-white,
+.admin-console select.bg-white,
+.admin-console textarea.bg-white {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.admin-console input:focus,
+.admin-console select:focus,
+.admin-console textarea:focus {
+  border-color: #10b981;
+  --tw-ring-color: rgba(16, 185, 129, 0.2);
+}
+
+.admin-console form.bg-ink-100 {
+  border: 1px solid #263449;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-console nav[aria-label="Seções de gerenciamento"] a {
+    transition:
+      color 220ms ease,
+      background-color 260ms ease,
+      border-color 260ms ease,
+      box-shadow 300ms ease,
+      transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
