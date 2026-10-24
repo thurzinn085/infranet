@@ -4,13 +4,14 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, normalizeRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { switchPortCountSuggestions, switchTypeSuggestions } from "@/lib/catalogs";
-import { bomPriceReferences } from "@/lib/bom-reference";
+import { findBomPriceReference } from "@/lib/bom-reference";
 import BomItemForm from "./BomItemForm";
 import ConfirmButton from "./ConfirmButton";
 import AdminSectionNav from "./AdminSectionNav";
 import {
   createBomItem,
   createCertification,
+  createLocation,
   createNetworkPoint,
   createPatchPanel,
   createRack,
@@ -18,6 +19,7 @@ import {
   createUser,
   deleteBomItem,
   deleteCertification,
+  deleteLocation,
   deleteNetworkPoint,
   deletePatchPanel,
   deleteRack,
@@ -47,7 +49,7 @@ export default async function AdminPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [users, racks, switches, patchPanels, points, switchPorts, panelPorts, tests, bomItems, bomSettings] =
+  const [users, racks, switches, patchPanels, points, switchPorts, panelPorts, tests, bomItems, bomSettings, locationRecords] =
     await Promise.all([
       user.role === Role.ADMIN ? db.user.findMany({ orderBy: { createdAt: "asc" } }) : [],
       db.rack.findMany({ where: user.role === Role.ADMIN ? {} : { ownerId: user.id }, orderBy: { name: "asc" } }),
@@ -56,13 +58,21 @@ export default async function AdminPage({
       db.networkPoint.findMany({
         where: user.role === Role.ADMIN ? {} : { ownerId: user.id },
         include: {
-          patchPanelPort: { include: { patchPanel: true } },
-          switchPort: { include: { switch: true } },
+          patchPanelPort: { include: { patchPanel: { include: { rack: true } } } },
+          switchPort: { include: { switch: { include: { rack: true } } } },
         },
         orderBy: { code: "asc" },
       }),
-      db.switchPort.findMany({ where: user.role === Role.ADMIN ? {} : { switch: { ownerId: user.id } }, include: { switch: true }, orderBy: { number: "asc" } }),
-      db.patchPanelPort.findMany({ where: user.role === Role.ADMIN ? {} : { patchPanel: { ownerId: user.id } }, include: { patchPanel: true }, orderBy: { number: "asc" } }),
+      db.switchPort.findMany({
+        where: user.role === Role.ADMIN ? {} : { switch: { ownerId: user.id } },
+        include: { switch: { include: { rack: true } } },
+        orderBy: { number: "asc" },
+      }),
+      db.patchPanelPort.findMany({
+        where: user.role === Role.ADMIN ? {} : { patchPanel: { ownerId: user.id } },
+        include: { patchPanel: { include: { rack: true } } },
+        orderBy: { number: "asc" },
+      }),
       db.certificationTest.findMany({
         where: user.role === Role.ADMIN ? {} : { networkPoint: { ownerId: user.id } },
         include: { networkPoint: true },
@@ -72,9 +82,14 @@ export default async function AdminPage({
       user.role === Role.ADMIN
         ? db.bomSettings.findFirst({ where: { OR: [{ userId: user.id }, { userId: null }] } })
         : db.bomSettings.findUnique({ where: { userId: user.id } }),
+      db.infrastructureLocation.findMany({
+        where: user.role === Role.ADMIN ? {} : { ownerId: user.id },
+        orderBy: { name: "asc" },
+      }),
     ]);
 
   const availableSections = [
+    { id: "locations", label: "Locais" },
     ...(user.role === Role.ADMIN ? [{ id: "users", label: "Usuários" }] : []),
     { id: "racks", label: "Racks" },
     { id: "switches", label: "Switches" },
@@ -83,10 +98,14 @@ export default async function AdminPage({
     { id: "certifications", label: "Certificações" },
     { id: "bom", label: "Materiais / BOM" },
   ];
-  const defaultSection = user.role === Role.ADMIN ? "users" : "racks";
+  const defaultSection = "locations";
   const section = availableSections.some((item) => item.id === searchParams.section)
     ? searchParams.section!
     : defaultSection;
+  const userLocations = locationRecords.filter((location) => location.ownerId === user.id);
+  const locationsForOwner = (ownerId: string | null) => locationRecords
+    .filter((location) => location.ownerId === ownerId)
+    .map((location) => location.name);
   const bomSubtotal = bomItems.reduce((sum, item) => sum + item.estimatedCost * item.quantity, 0);
   const bomMargin = bomSettings?.marginPercent ?? 0;
   const bomTotal = bomSubtotal * (1 + bomMargin / 100);
@@ -143,7 +162,25 @@ export default async function AdminPage({
               </p>
             )}
 
-        {section === "users" && user.role === Role.ADMIN && <Section title={`Usuários (${users.length})`} description="Crie contas e altere nome, e-mail e nível de acesso.">
+            {section === "locations" && <Section id="locations" title={`Locais (${userLocations.length})`} description="Cadastre cada local uma vez. Racks e pontos de rede poderão selecionar os locais cadastrados, evitando variações de escrita.">
+              <form action={createLocation} className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <Field name="name" label="Nome do local" maxLength={120} required />
+                <button className={buttonClass}>Adicionar local</button>
+              </form>
+              <div className="mt-4 space-y-2">
+                {userLocations.map((location) => (
+                  <div key={location.id} className="flex items-center justify-between gap-3 rounded-md border border-line p-3">
+                    <span className="font-medium text-ink-900">{location.name}</span>
+                    <form action={deleteLocation}>
+                      <input type="hidden" name="id" value={location.id} />
+                      <ConfirmButton message={`Excluir o local ${location.name}?`}>Excluir</ConfirmButton>
+                    </form>
+                  </div>
+                ))}
+              </div>
+            </Section>}
+
+            {section === "users" && user.role === Role.ADMIN && <Section title={`Usuários (${users.length})`} description="Crie contas e altere nome, e-mail e nível de acesso.">
           <form action={createUser} className="grid gap-3 rounded-md bg-ink-100 p-4 sm:grid-cols-2 lg:grid-cols-6">
             <Field name="firstName" label="Nome" required />
             <Field name="lastName" label="Sobrenome" />
@@ -191,7 +228,7 @@ export default async function AdminPage({
         {section === "racks" && <Section id="racks" title={`Racks (${racks.length})`} description="Cadastre locais e agrupe switches e patch panels.">
           <form action={createRack} className="grid gap-3 sm:grid-cols-3">
             <Field name="name" label="Nome do rack" required />
-            <Field name="location" label="Localização" />
+            <LocationSelect locations={userLocations.map((location) => location.name)} />
             <button className={buttonClass}>Adicionar rack</button>
           </form>
           <div className="mt-4 space-y-2">
@@ -208,7 +245,10 @@ export default async function AdminPage({
                   <form action={updateRack} className="contents">
                     <input type="hidden" name="id" value={rack.id} />
                     <Field name="name" label="Nome" defaultValue={rack.name} required />
-                    <Field name="location" label="Localização" defaultValue={rack.location ?? ""} />
+                    <LocationSelect
+                      locations={locationsForOwner(rack.ownerId)}
+                      defaultValue={rack.location ?? ""}
+                    />
                     <button className={buttonClass}>Salvar</button>
                   </form>
                   <form action={deleteRack}>
@@ -243,16 +283,18 @@ export default async function AdminPage({
           showModel={false}
         />}
 
-        {section === "network-points" && <Section id="network-points" title={`Pontos de rede (${points.length})`} description="Gerencie identificador, categoria de cabo e portas vinculadas.">
+        {section === "network-points" && <Section id="network-points" title={`Pontos de rede (${points.length})`} description="Gerencie identificador, localização, categoria do cabo e as portas conectadas no patch panel e no switch.">
           <form action={createNetworkPoint} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Field name="code" label="Código" required />
-            <Field name="location" label="Localização" required />
+            <LocationSelect locations={userLocations.map((location) => location.name)} />
             <CableSelect />
             <PortSelect name="patchPanelPortId" label="Porta do patch panel" ports={panelPorts.map((port) => ({
-              id: port.id, label: `${port.patchPanel.name} · porta ${port.number}`,
+              id: port.id,
+              label: `${port.patchPanel.name} · ${rackLabel(port.patchPanel.rack)} · porta ${port.number}`,
             }))} />
             <PortSelect name="switchPortId" label="Porta do switch" ports={switchPorts.map((port) => ({
-              id: port.id, label: `${port.switch.name} · porta ${port.number}`,
+              id: port.id,
+              label: `${port.switch.name} · ${rackLabel(port.switch.rack)} · porta ${port.number}`,
             }))} />
             <button className={buttonClass}>Adicionar ponto</button>
           </form>
@@ -263,6 +305,16 @@ export default async function AdminPage({
                   <span>
                     <span className="block font-medium text-ink-900">{point.code}</span>
                     <span className="text-sm text-ink-500">{point.location} · {point.cableCategory.replace("_", " ")}</span>
+                    <span className="block text-sm text-ink-500">
+                      Patch panel: {point.patchPanelPort
+                        ? `${point.patchPanelPort.patchPanel.name} · ${rackLabel(point.patchPanelPort.patchPanel.rack)} · porta ${point.patchPanelPort.number}`
+                        : "Sem vínculo"}
+                    </span>
+                    <span className="block text-sm text-ink-500">
+                      Switch: {point.switchPort
+                        ? `${point.switchPort.switch.name} · ${rackLabel(point.switchPort.switch.rack)} · porta ${point.switchPort.number}`
+                        : "Sem vínculo"}
+                    </span>
                   </span>
                   <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
                 </summary>
@@ -270,12 +322,21 @@ export default async function AdminPage({
                   <form action={updateNetworkPoint} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     <input type="hidden" name="id" value={point.id} />
                     <Field name="code" label="Código" defaultValue={point.code} required />
-                    <Field name="location" label="Localização" defaultValue={point.location} required />
+                    <LocationSelect
+                      locations={locationsForOwner(point.ownerId)}
+                      defaultValue={point.location}
+                    />
                     <CableSelect defaultValue={point.cableCategory} />
                     <PortSelect name="patchPanelPortId" label="Patch panel" defaultValue={point.patchPanelPortId ?? ""}
-                      ports={panelPorts.map((port) => ({ id: port.id, label: `${port.patchPanel.name} · ${port.number}` }))} />
+                      ports={panelPorts.map((port) => ({
+                        id: port.id,
+                        label: `${port.patchPanel.name} · ${rackLabel(port.patchPanel.rack)} · porta ${port.number}`,
+                      }))} />
                     <PortSelect name="switchPortId" label="Switch" defaultValue={point.switchPortId ?? ""}
-                      ports={switchPorts.map((port) => ({ id: port.id, label: `${port.switch.name} · ${port.number}` }))} />
+                      ports={switchPorts.map((port) => ({
+                        id: port.id,
+                        label: `${port.switch.name} · ${rackLabel(port.switch.rack)} · porta ${port.number}`,
+                      }))} />
                     <button className={buttonClass}>Salvar ponto</button>
                   </form>
                   <form action={deleteNetworkPoint} className="flex items-end">
@@ -334,8 +395,8 @@ export default async function AdminPage({
             </div>
             <div className="rounded-md border border-line bg-ink-50 p-4">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-ink-700 ring-1 ring-line">2</span>
-              <p className="mt-3 text-sm font-semibold text-ink-900">Preencha quantidade e preço</p>
-              <p className="mt-1 text-xs leading-5 text-ink-500">O preço é por unidade; use sua cotação atual.</p>
+              <p className="mt-3 text-sm font-semibold text-ink-900">Confira a estimativa</p>
+              <p className="mt-1 text-xs leading-5 text-ink-500">O catálogo sugere um preço por unidade; ajuste para a cotação que você recebeu.</p>
             </div>
             <div className="rounded-md border border-line bg-ink-50 p-4">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-ink-700 ring-1 ring-line">3</span>
@@ -380,41 +441,52 @@ export default async function AdminPage({
             <button className={buttonClass}>Atualizar total</button>
           </form>
           <BomItemForm action={createBomItem} />
-          <div className="mt-6 overflow-x-auto rounded-md border border-line">
-            <div className="min-w-[600px]">
-              <div className="border-b border-line bg-ink-100 p-4">
-                <h3 className="font-semibold text-ink-900">Preços de referência no Brasil</h3>
-                <p className="mt-1 text-sm text-ink-600">
-                  Referências consultadas em 19/10/2026 em anúncios da KaBuM!, não uma média nacional.
-                  Estoque, vendedor e frete podem alterar os valores; confira antes de fechar o orçamento.
-                </p>
-              </div>
-              <table className="w-full text-left text-sm">
-                <thead className="text-ink-500">
-                  <tr>
-                    <th className="px-4 py-2 font-medium">Material</th>
-                    <th className="px-4 py-2 font-medium">Referência por unidade</th>
-                    <th className="px-4 py-2 font-medium">Fonte</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bomPriceReferences.map((reference) => (
-                    <tr key={reference.id} className="border-t border-line">
-                      <td className="px-4 py-3 text-ink-900">{reference.name}</td>
-                      <td className="px-4 py-3 text-ink-900">
-                        {reference.estimatedCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} / {reference.unit}
-                      </td>
-                      <td className="px-4 py-3">
-                        <a href={reference.sourceUrl} target="_blank" rel="noreferrer" className="font-medium text-brand-700 underline">
-                          {reference.sourceLabel}
-                        </a>
-                      </td>
+          {bomItems.length > 0 && (
+            <div className="mt-6 overflow-x-auto rounded-md border border-line">
+              <div className="min-w-[600px]">
+                <div className="border-b border-line bg-ink-100 p-4">
+                  <h3 className="font-semibold text-ink-900">Referências dos materiais selecionados</h3>
+                  <p className="mt-1 text-sm text-ink-600">
+                    Esta lista mostra somente os itens que você adicionou à BOM. Os valores do catálogo são estimativas:
+                    confira a referência e ajuste o preço antes de fechar o orçamento.
+                  </p>
+                </div>
+                <table className="w-full text-left text-sm">
+                  <thead className="text-ink-500">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Material</th>
+                      <th className="px-4 py-2 font-medium">Preço usado na BOM</th>
+                      <th className="px-4 py-2 font-medium">Referência</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {bomItems.map((item) => {
+                      const reference = findBomPriceReference(item.name, item.unit);
+                      return (
+                        <tr key={item.id} className="border-t border-line">
+                          <td className="px-4 py-3 text-ink-900">{item.name}</td>
+                          <td className="px-4 py-3 text-ink-900">
+                            {item.estimatedCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} / {item.unit}
+                          </td>
+                          <td className="px-4 py-3">
+                            {reference ? (
+                              <a href={reference.sourceUrl} target="_blank" rel="noreferrer" className="font-medium text-brand-700 underline">
+                                {reference.isVerifiedReference
+                                  ? reference.sourceLabel
+                                  : `Buscar cotações: ${reference.name}`}
+                              </a>
+                            ) : (
+                              <span className="text-ink-500">Preço informado manualmente; sem referência do catálogo.</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
           {bomItems.length > 0 ? (
             <div className="mt-6 overflow-x-auto rounded-lg border border-line">
               <div className="min-w-[720px]">
@@ -521,6 +593,26 @@ function SelectField({
   );
 }
 
+function LocationSelect({ locations, defaultValue = "" }: {
+  locations: string[];
+  defaultValue?: string;
+}) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
+      Localização
+      <select name="location" defaultValue={defaultValue} className={inputClass} required>
+        <option value="">Selecione um local cadastrado</option>
+        {defaultValue && !locations.includes(defaultValue) && (
+          <option value={defaultValue}>{defaultValue} (localização atual)</option>
+        )}
+        {locations.map((location) => (
+          <option key={location} value={location}>{location}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function RoleSelect({ defaultValue = "USER" }: { defaultValue?: "ADMIN" | "USER" }) {
   return (
     <SelectField name="role" label="Perfil" defaultValue={defaultValue}>
@@ -603,7 +695,7 @@ function DeviceSection({
   updateAction: (formData: FormData) => void;
   deleteAction: (formData: FormData) => void;
   devices: { id: string; name: string; model?: string | null; portCount: number; rackId: string | null }[];
-  racks: { id: string; name: string }[];
+  racks: { id: string; name: string; location: string | null }[];
   deleteMessage: string;
   showModel?: boolean;
 }) {
@@ -624,6 +716,9 @@ function DeviceSection({
                 <span className="block font-medium text-ink-900">{device.name}</span>
                 <span className="text-sm text-ink-500">
                   {device.model ? `${device.model} · ` : ""}{device.portCount} portas
+                </span>
+                <span className="block text-sm text-ink-500">
+                  {rackLabel(racks.find((rack) => rack.id === device.rackId) ?? null)}
                 </span>
               </span>
               <span className="text-sm font-medium text-ink-700">Editar <span aria-hidden="true">⌄</span></span>
@@ -650,13 +745,21 @@ function DeviceSection({
 }
 
 function RackSelect({ racks, defaultValue = "" }: {
-  racks: { id: string; name: string }[];
+  racks: { id: string; name: string; location: string | null }[];
   defaultValue?: string;
 }) {
   return (
     <SelectField name="rackId" label="Rack" defaultValue={defaultValue}>
       <option value="">Sem rack</option>
-      {racks.map((rack) => <option key={rack.id} value={rack.id}>{rack.name}</option>)}
+      {racks.map((rack) => (
+        <option key={rack.id} value={rack.id}>{rack.name} · {rack.location || "Localização não informada"}</option>
+      ))}
     </SelectField>
   );
+}
+
+function rackLabel(rack: { name: string; location: string | null } | null) {
+  return rack
+    ? `${rack.name} · ${rack.location || "Localização não informada"}`
+    : "Sem rack";
 }

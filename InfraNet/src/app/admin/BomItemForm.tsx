@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { bomCatalog } from "@/lib/catalogs";
-import { bomPriceReferences } from "@/lib/bom-reference";
+import { bomPriceReferences, findBomPriceReference } from "@/lib/bom-reference";
 
 const inputClass =
   "min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink-900 outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-100";
@@ -28,6 +28,7 @@ export default function BomItemForm({ action }: Props) {
     }))
     .filter((group) => group.items.length > 0);
   const catalogItems = bomCatalog.flatMap((group) => group.items);
+  const selectedReference = findBomPriceReference(name, unit);
 
   return (
     <form action={action} className="grid gap-3 rounded-md bg-ink-100 p-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -121,7 +122,7 @@ export default function BomItemForm({ action }: Props) {
         />
       </label>
       <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
-        Preço por unidade (R$)
+        Preço estimado por unidade (R$)
         <input
           name="estimatedCost"
           className={inputClass}
@@ -132,6 +133,14 @@ export default function BomItemForm({ action }: Props) {
           onChange={(event) => setEstimatedCost(event.target.value)}
           required
         />
+        <span className="font-normal text-ink-500">
+          {selectedReference
+            ? `Estimativa inicial: ${selectedReference.estimatedCost.toLocaleString("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            })}/${selectedReference.unit}. Confira a referência no resumo da BOM.`
+            : "Item próprio: informe o preço da sua cotação."}
+        </span>
       </label>
       <button className={`${buttonClass} self-end`}>Adicionar material</button>
     </form>

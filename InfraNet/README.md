@@ -17,6 +17,15 @@ de senha, sessao persistente "lembrar de mim").
   Os dados de cada usuário são isolados no servidor. A BOM apresenta a média
   simples dos custos unitários dos materiais e o custo total estimado
   (quantidade × custo unitário).
+- Cada usuário cadastra seus próprios locais na aba "Locais"; racks e pontos de
+  rede selecionam um local já cadastrado. Nomes repetidos ignorando acentos,
+  espaços e pontuação são bloqueados. Pontos podem ser associados a uma porta
+  de patch panel e a uma porta de switch; a tela exibe o equipamento,
+  rack/localização e número da porta.
+- A BOM sugere um preço inicial para cada material do catálogo, mas esses
+  valores são estimativas para planejamento. A lista de referências ao final
+  mostra apenas os materiais adicionados à BOM; confira a cotação e ajuste o
+  preço unitário antes de usar o orçamento.
 - Ainda **nao** implementado (proximos turnos, seguindo a Prioridade 2-5 da
   especificacao): geracao de etiquetas, metricas detalhadas e central de ajuda.
   O painel inicial mostra contagens do inventario, certificacoes e itens da

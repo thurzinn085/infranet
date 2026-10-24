@@ -34,6 +34,7 @@ model User {
   networkPoints     NetworkPoint[]
   bomItems          BomItem[]
   bomSettings       BomSettings[]
+  locations         InfrastructureLocation[]
 
   @@map("users")
 }
@@ -67,6 +68,20 @@ model PasswordReset {
 
   @@index([userId])
   @@map("password_resets")
+}
+
+model InfrastructureLocation {
+  id             String   @id @default(cuid())
+  ownerId        String
+  name           String
+  normalizedName String
+  createdAt      DateTime @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, normalizedName])
+  @@index([ownerId])
+  @@map("infrastructure_locations")
 }
 
 // ---------- Inventario de rede (Prioridade 2 — a implementar) ----------

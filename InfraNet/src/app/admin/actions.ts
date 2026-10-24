@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { normalizeInfrastructureLocation } from "@/lib/locations";
 import { hashPassword, isPasswordValid } from "@/lib/password";
 
 const idSchema = z.string().trim().min(1);
@@ -14,8 +15,12 @@ const nameSchema = z.string().trim().min(1).max(120);
 const optionalText = z.string().trim().max(500).transform((value) => value || null);
 const optionalId = z.string().trim().transform((value) => value || null);
 const portCountSchema = z.coerce.number().int().min(1).max(512);
+const locationNameSchema = z.string().trim().min(1).max(120).refine(
+  (value) => normalizeInfrastructureLocation(value).length > 0
+);
 
 const adminSections = new Set([
+  "locations",
   "users",
   "racks",
   "switches",
@@ -55,6 +60,22 @@ function ownerScope(user: Awaited<ReturnType<typeof requireUser>>) {
 async function ensureRackAccess(user: Awaited<ReturnType<typeof requireUser>>, rackId: string | null) {
   if (rackId && !await db.rack.findFirst({ where: { id: rackId, ...ownerScope(user) }, select: { id: true } })) {
     report("error", "Rack não encontrado na sua infraestrutura.");
+  }
+}
+
+async function ensureLocationAccess(
+  user: Awaited<ReturnType<typeof requireUser>>,
+  location: string,
+  ownerId: string | null
+) {
+  if (!ownerId || !await db.infrastructureLocation.findFirst({
+    where: {
+      ownerId: user.role === "ADMIN" ? ownerId : user.id,
+      normalizedName: normalizeInfrastructureLocation(location),
+    },
+    select: { id: true },
+  })) {
+    report("error", "Selecione um local cadastrado para esta infraestrutura.");
   }
 }
 
@@ -202,11 +223,64 @@ export async function resetUserPassword(formData: FormData) {
   refreshAdmin("Senha alterada; sessões antigas do usuário foram encerradas.");
 }
 
-const rackFields = z.object({ name: nameSchema, location: optionalText });
+const locationFields = z.object({ name: locationNameSchema });
+export async function createLocation(formData: FormData) {
+  const user = await requireUser();
+  const parsed = locationFields.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) report("error", "Informe um nome válido para o local.");
+
+  const normalizedName = normalizeInfrastructureLocation(parsed.data.name);
+  if (await db.infrastructureLocation.findFirst({
+    where: { ownerId: user.id, normalizedName },
+    select: { id: true },
+  })) {
+    report("error", "Este local já está cadastrado. Escolha-o na lista em vez de cadastrá-lo novamente.");
+  }
+
+  try {
+    await db.infrastructureLocation.create({
+      data: { name: parsed.data.name, normalizedName, ownerId: user.id },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      report("error", "Este local já está cadastrado. Escolha-o na lista em vez de cadastrá-lo novamente.");
+    }
+    throw error;
+  }
+  refreshAdmin("Local cadastrado.");
+}
+
+export async function deleteLocation(formData: FormData) {
+  const user = await requireUser();
+  const parsed = z.object({ id: idSchema }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) report("error", "Local inválido.");
+
+  const location = await db.infrastructureLocation.findFirst({
+    where: { id: parsed.data.id, ownerId: user.id },
+  });
+  if (!location) report("error", "Local não encontrado.");
+
+  const [racks, points] = await Promise.all([
+    db.rack.count({ where: { ownerId: user.id, location: location.name } }),
+    db.networkPoint.count({ where: { ownerId: user.id, location: location.name } }),
+  ]);
+  if (racks + points > 0) {
+    report("error", "Este local está sendo usado por racks ou pontos de rede. Altere esses registros antes de excluí-lo.");
+  }
+
+  await db.infrastructureLocation.delete({ where: { id: location.id } });
+  refreshAdmin("Local excluído.");
+}
+
+const rackFields = z.object({
+  name: nameSchema,
+  location: locationNameSchema,
+});
 export async function createRack(formData: FormData) {
   const user = await requireUser();
   const parsed = rackFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Informe um nome válido para o rack.");
+  await ensureLocationAccess(user, parsed.data.location, user.id);
   await db.rack.create({ data: { ...parsed.data, ownerId: user.id } });
   refreshAdmin("Rack criado.");
 }
@@ -214,8 +288,15 @@ export async function updateRack(formData: FormData) {
   const user = await requireUser();
   const parsed = rackFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Dados do rack inválidos.");
-  if (!await db.rack.findFirst({ where: { id: parsed.data.id, ...ownerScope(user) }, select: { id: true } })) {
+  const rack = await db.rack.findFirst({
+    where: { id: parsed.data.id, ...ownerScope(user) },
+    select: { id: true, ownerId: true, location: true },
+  });
+  if (!rack) {
     report("error", "Rack não encontrado na sua infraestrutura.");
+  }
+  if (parsed.data.location !== rack.location) {
+    await ensureLocationAccess(user, parsed.data.location, rack.ownerId);
   }
   await db.rack.update({ where: { id: parsed.data.id }, data: { name: parsed.data.name, location: parsed.data.location } });
   refreshAdmin("Rack atualizado.");
@@ -343,7 +424,7 @@ export async function deletePatchPanel(formData: FormData) {
 
 const pointFields = z.object({
   code: nameSchema,
-  location: z.string().trim().min(1).max(200),
+  location: locationNameSchema,
   cableCategory: z.nativeEnum(CableCategory),
   patchPanelPortId: optionalId,
   switchPortId: optionalId,
@@ -352,6 +433,7 @@ export async function createNetworkPoint(formData: FormData) {
   const user = await requireUser();
   const parsed = pointFields.safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", "Confira o código, local e categoria do ponto.");
+  await ensureLocationAccess(user, parsed.data.location, user.id);
   if (await db.networkPoint.findFirst({
     where: { code: parsed.data.code, ownerId: user.id },
     select: { id: true },
@@ -376,9 +458,12 @@ export async function updateNetworkPoint(formData: FormData) {
   const { id, ...data } = parsed.data;
   const existing = await db.networkPoint.findFirst({
     where: { id, ...ownerScope(user) },
-    select: { id: true, ownerId: true },
+    select: { id: true, ownerId: true, location: true },
   });
   if (!existing) report("error", "Ponto não encontrado na sua infraestrutura.");
+  if (data.location !== existing.location) {
+    await ensureLocationAccess(user, data.location, existing.ownerId);
+  }
   if (await db.networkPoint.findFirst({
     where: { code: data.code, ownerId: existing.ownerId, id: { not: id } },
     select: { id: true },
