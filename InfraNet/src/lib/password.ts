@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 
 export type PasswordRuleCheck = {
   minLength: boolean;
@@ -29,15 +30,20 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-// Codigos numericos de 6 digitos para recuperacao de senha.
-export function generateNumericCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+export function normalizeSecurityAnswer(answer: string): string {
+  const normalizedAnswer = answer
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLocaleLowerCase("pt-BR")
+    .trim()
+    .replace(/\s+/g, " ");
+  return createHash("sha256").update(normalizedAnswer).digest("hex");
 }
 
-export async function hashCode(code: string): Promise<string> {
-  return bcrypt.hash(code, 10);
+export async function hashSecurityAnswer(answer: string): Promise<string> {
+  return bcrypt.hash(normalizeSecurityAnswer(answer), 12);
 }
 
-export async function verifyCode(code: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(code, hash);
+export async function verifySecurityAnswer(answer: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(normalizeSecurityAnswer(answer), hash);
 }

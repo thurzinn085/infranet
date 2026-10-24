@@ -1,14 +1,5 @@
-import AuthShell from "@/components/auth/AuthShell";
-import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
+import { redirect } from "next/navigation";
 
-export default function ResetPasswordPage({
-  searchParams,
-}: {
-  searchParams: { email?: string };
-}) {
-  return (
-    <AuthShell title="Nova senha" subtitle="Informe o codigo recebido e a nova senha.">
-      <ResetPasswordForm initialEmail={searchParams.email ?? ""} />
-    </AuthShell>
-  );
+export default function ResetPasswordPage() {
+  redirect("/forgot-password");
 }

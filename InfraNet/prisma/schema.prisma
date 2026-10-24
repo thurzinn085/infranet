@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,54 +15,57 @@ enum Role {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  firstName         String
-  lastName          String?
-  email             String    @unique
-  passwordHash      String
-  role              Role      @default(LEITOR)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                          String    @id @default(cuid())
+  firstName                   String
+  lastName                    String?
+  email                       String    @unique
+  passwordHash                String
+  securityQuestion            String?
+  securityAnswerHash          String?
+  securityRecoveryAttempts    Int       @default(0)
+  securityRecoveryLockedUntil DateTime?
+  role                        Role      @default(LEITOR)
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
 
-  sessions          Session[]
-  passwordResets    PasswordReset[]
-  racks             Rack[]
-  switches          Switch[]
-  patchPanels       PatchPanel[]
-  networkPoints     NetworkPoint[]
-  bomItems          BomItem[]
-  bomSettings       BomSettings[]
-  locations         InfrastructureLocation[]
+  sessions       Session[]
+  passwordResets PasswordReset[]
+  racks          Rack[]
+  switches       Switch[]
+  patchPanels    PatchPanel[]
+  networkPoints  NetworkPoint[]
+  bomItems       BomItem[]
+  bomSettings    BomSettings[]
+  locations      InfrastructureLocation[]
 
   @@map("users")
 }
 
-
 model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  tokenHash    String   @unique
-  rememberMe   Boolean  @default(false)
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  revokedAt    DateTime?
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  rememberMe Boolean   @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("sessions")
 }
 
 model PasswordReset {
-  id         String    @id @default(cuid())
-  userId     String
-  codeHash   String
-  expiresAt  DateTime
-  usedAt     DateTime?
-  attempts   Int       @default(0)
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
 
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("password_resets")
@@ -108,23 +109,23 @@ model Rack {
   location  String?
   createdAt DateTime @default(now())
 
-  owner        User?        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  switches     Switch[]
-  patchPanels  PatchPanel[]
+  owner       User?        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  switches    Switch[]
+  patchPanels PatchPanel[]
 
   @@index([ownerId])
   @@map("racks")
 }
 
 model Switch {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   ownerId   String?
   name      String
   model     String?
   portCount Int
   rackId    String?
   owner     User?        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  rack      Rack?    @relation(fields: [rackId], references: [id])
+  rack      Rack?        @relation(fields: [rackId], references: [id])
   ports     SwitchPort[]
 
   @@index([ownerId])
@@ -132,10 +133,10 @@ model Switch {
 }
 
 model SwitchPort {
-  id       String  @id @default(cuid())
-  switchId String
-  number   Int
-  switch   Switch  @relation(fields: [switchId], references: [id], onDelete: Cascade)
+  id           String        @id @default(cuid())
+  switchId     String
+  number       Int
+  switch       Switch        @relation(fields: [switchId], references: [id], onDelete: Cascade)
   networkPoint NetworkPoint?
 
   @@unique([switchId, number])
@@ -143,13 +144,13 @@ model SwitchPort {
 }
 
 model PatchPanel {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   ownerId   String?
   name      String
   portCount Int
   rackId    String?
-  owner     User?        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  rack      Rack?    @relation(fields: [rackId], references: [id])
+  owner     User?            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rack      Rack?            @relation(fields: [rackId], references: [id])
   ports     PatchPanelPort[]
 
   @@index([ownerId])
@@ -157,10 +158,10 @@ model PatchPanel {
 }
 
 model PatchPanelPort {
-  id           String     @id @default(cuid())
+  id           String        @id @default(cuid())
   patchPanelId String
   number       Int
-  patchPanel   PatchPanel @relation(fields: [patchPanelId], references: [id], onDelete: Cascade)
+  patchPanel   PatchPanel    @relation(fields: [patchPanelId], references: [id], onDelete: Cascade)
   networkPoint NetworkPoint?
 
   @@unique([patchPanelId, number])
@@ -178,10 +179,10 @@ model NetworkPoint {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  owner            User?           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  patchPanelPort   PatchPanelPort? @relation(fields: [patchPanelPortId], references: [id])
-  switchPort       SwitchPort?     @relation(fields: [switchPortId], references: [id])
-  certifications   CertificationTest[]
+  owner          User?               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  patchPanelPort PatchPanelPort?     @relation(fields: [patchPanelPortId], references: [id])
+  switchPort     SwitchPort?         @relation(fields: [switchPortId], references: [id])
+  certifications CertificationTest[]
 
   @@unique([ownerId, code])
   @@index([ownerId])
@@ -189,14 +190,14 @@ model NetworkPoint {
 }
 
 model CertificationTest {
-  id             String       @id @default(cuid())
+  id             String     @id @default(cuid())
   networkPointId String
-  result         TestResult   @default(PENDENTE)
-  performedAt    DateTime     @default(now())
+  result         TestResult @default(PENDENTE)
+  performedAt    DateTime   @default(now())
   performedBy    String?
   notes          String?
 
-  networkPoint   NetworkPoint @relation(fields: [networkPointId], references: [id], onDelete: Cascade)
+  networkPoint NetworkPoint @relation(fields: [networkPointId], references: [id], onDelete: Cascade)
 
   @@index([networkPointId])
   @@map("certification_tests")
@@ -214,17 +215,18 @@ model BomItem {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  owner         User?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@map("bom_items")
 }
 
 model BomSettings {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   userId        String? @unique
-  marginPercent Float  @default(0)
+  marginPercent Float   @default(0)
 
-  user          User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("bom_settings")
 }

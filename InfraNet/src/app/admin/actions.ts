@@ -8,7 +8,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { normalizeInfrastructureLocation } from "@/lib/locations";
-import { hashPassword, isPasswordValid } from "@/lib/password";
+import { hashPassword, hashSecurityAnswer, isPasswordValid } from "@/lib/password";
 
 const idSchema = z.string().trim().min(1);
 const nameSchema = z.string().trim().min(1).max(120);
@@ -18,9 +18,19 @@ const portCountSchema = z.coerce.number().int().min(1).max(512);
 const locationNameSchema = z.string().trim().min(1).max(120).refine(
   (value) => normalizeInfrastructureLocation(value).length > 0
 );
+const securityRecoveryShape = {
+  securityQuestion: z.string().trim().min(5).max(200),
+  securityAnswer: z.string().trim().min(2).max(120),
+  confirmSecurityAnswer: z.string().trim().min(2).max(120),
+};
+const securityRecoveryFields = z.object(securityRecoveryShape).refine((data) => data.securityAnswer === data.confirmSecurityAnswer, {
+  message: "As respostas de recuperação não coincidem.",
+  path: ["confirmSecurityAnswer"],
+});
 
 const adminSections = new Set([
   "locations",
+  "security",
   "users",
   "racks",
   "switches",
@@ -97,6 +107,23 @@ function refreshAdmin(message: string) {
   report("notice", message);
 }
 
+export async function updateSecurityRecovery(formData: FormData) {
+  const user = await requireUser();
+  const parsed = securityRecoveryFields.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) report("error", "Informe uma pergunta e uma resposta válidas.");
+
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      securityQuestion: parsed.data.securityQuestion,
+      securityAnswerHash: await hashSecurityAnswer(parsed.data.securityAnswer),
+      securityRecoveryAttempts: 0,
+      securityRecoveryLockedUntil: null,
+    },
+  });
+  refreshAdmin("Pergunta e resposta de recuperação atualizadas.");
+}
+
 async function updateSwitchPortRows(tx: Prisma.TransactionClient, switchId: string, portCount: number) {
   const occupiedPort = await tx.switchPort.findFirst({
     where: { switchId, number: { gt: portCount }, networkPoint: { isNot: null } },
@@ -142,16 +169,26 @@ export async function createUser(formData: FormData) {
   await requireAdmin();
   const parsed = userFields.extend({
     password: z.string().refine(isPasswordValid, "Use 6 caracteres, uma letra maiúscula e um número."),
+    ...securityRecoveryShape,
   }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) report("error", parsed.error.issues[0]?.message ?? "Dados inválidos.");
 
-  const { firstName, lastName, email, role, password } = parsed.data;
+  const { firstName, lastName, email, role, password, securityQuestion, securityAnswer } = parsed.data;
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
     report("error", "Já existe uma conta cadastrada com este e-mail.");
   }
   const passwordHash = await hashPassword(password);
+  const securityAnswerHash = await hashSecurityAnswer(securityAnswer);
   await db.user.create({
-    data: { firstName, lastName, email, role: role === "ADMIN" ? Role.ADMIN : Role.LEITOR, passwordHash },
+    data: {
+      firstName,
+      lastName,
+      email,
+      role: role === "ADMIN" ? Role.ADMIN : Role.LEITOR,
+      passwordHash,
+      securityQuestion,
+      securityAnswerHash,
+    },
   });
   refreshAdmin("Usuário criado.");
 }

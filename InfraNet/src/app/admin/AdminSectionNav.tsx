@@ -127,6 +127,12 @@ function SectionIcon({ name }: { name: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
+      {name === "security" && (
+        <>
+          <rect x="5" y="10" width="14" height="11" rx="2" />
+          <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+        </>
+      )}
       {name === "locations" && (
         <>
           <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />

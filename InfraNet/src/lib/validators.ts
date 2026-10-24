@@ -14,10 +14,17 @@ export const registerSchema = z
     email: z.string().trim().email("Informe um e-mail valido."),
     password: passwordSchema,
     confirmPassword: z.string(),
+    securityQuestion: z.string().trim().min(5, "Informe uma pergunta de recuperacao.").max(200),
+    securityAnswer: z.string().trim().min(2, "Informe a resposta de recuperacao.").max(120),
+    confirmSecurityAnswer: z.string().trim().min(2, "Confirme a resposta de recuperacao.").max(120),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas nao coincidem.",
     path: ["confirmPassword"],
+  })
+  .refine((data) => data.securityAnswer === data.confirmSecurityAnswer, {
+    message: "As respostas de recuperacao nao coincidem.",
+    path: ["confirmSecurityAnswer"],
   });
 
 export const loginSchema = z.object({
@@ -33,7 +40,7 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z
   .object({
     email: z.string().trim().email(),
-    code: z.string().length(6, "O codigo deve ter 6 digitos."),
+    securityAnswer: z.string().trim().min(2).max(120),
     password: passwordSchema,
     confirmPassword: z.string(),
   })

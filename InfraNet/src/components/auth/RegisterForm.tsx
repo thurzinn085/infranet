@@ -31,6 +31,9 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [securityQuestion, setSecurityQuestion] = useState("");
+  const [securityAnswer, setSecurityAnswer] = useState("");
+  const [confirmSecurityAnswer, setConfirmSecurityAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +49,16 @@ export default function RegisterForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password, confirmPassword }),
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password,
+          confirmPassword,
+          securityQuestion,
+          securityAnswer,
+          confirmSecurityAnswer,
+        }),
       });
       const data = await res.json();
 
@@ -118,6 +130,40 @@ export default function RegisterForm() {
         onChange={(e) => setConfirmPassword(e.target.value)}
         error={!passwordsMatch ? "As senhas nao coincidem." : undefined}
       />
+
+      <div className="flex flex-col gap-3 rounded-md border border-white/10 p-3">
+        <p className="text-sm text-neutral-300">
+          Use uma pergunta pessoal e uma resposta que outras pessoas nao consigam adivinhar.
+          A resposta sera necessaria para recuperar sua senha; nao use algo que voce publique
+          ou conte facilmente.
+        </p>
+        <TextField
+          label="Pergunta de recuperacao"
+          name="securityQuestion"
+          required
+          maxLength={200}
+          value={securityQuestion}
+          onChange={(e) => setSecurityQuestion(e.target.value)}
+        />
+        <TextField
+          label="Resposta de recuperacao"
+          name="securityAnswer"
+          required
+          maxLength={120}
+          autoComplete="off"
+          value={securityAnswer}
+          onChange={(e) => setSecurityAnswer(e.target.value)}
+        />
+        <TextField
+          label="Confirmar resposta de recuperacao"
+          name="confirmSecurityAnswer"
+          required
+          maxLength={120}
+          autoComplete="off"
+          value={confirmSecurityAnswer}
+          onChange={(e) => setConfirmSecurityAnswer(e.target.value)}
+        />
+      </div>
 
       <Button type="submit" loading={loading} className="mt-1">
         Criar conta

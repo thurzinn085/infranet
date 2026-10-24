@@ -32,6 +32,7 @@ import {
   updateNetworkPoint,
   updatePatchPanel,
   updateRack,
+  updateSecurityRecovery,
   updateSwitch,
   updateUser,
 } from "./actions";
@@ -49,7 +50,7 @@ export default async function AdminPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [users, racks, switches, patchPanels, points, switchPorts, panelPorts, tests, bomItems, bomSettings, locationRecords] =
+  const [users, racks, switches, patchPanels, points, switchPorts, panelPorts, tests, bomItems, bomSettings, locationRecords, accountSecurity] =
     await Promise.all([
       user.role === Role.ADMIN ? db.user.findMany({ orderBy: { createdAt: "asc" } }) : [],
       db.rack.findMany({ where: user.role === Role.ADMIN ? {} : { ownerId: user.id }, orderBy: { name: "asc" } }),
@@ -86,10 +87,15 @@ export default async function AdminPage({
         where: user.role === Role.ADMIN ? {} : { ownerId: user.id },
         orderBy: { name: "asc" },
       }),
+      db.user.findUnique({
+        where: { id: user.id },
+        select: { securityQuestion: true },
+      }),
     ]);
 
   const availableSections = [
     { id: "locations", label: "Locais" },
+    { id: "security", label: "Segurança da conta" },
     ...(user.role === Role.ADMIN ? [{ id: "users", label: "Usuários" }] : []),
     { id: "racks", label: "Racks" },
     { id: "switches", label: "Switches" },
@@ -180,12 +186,49 @@ export default async function AdminPage({
               </div>
             </Section>}
 
+            {section === "security" && <Section id="security" title="Segurança da conta" description="Cadastre ou atualize a pergunta usada para recuperar sua senha sem e-mail.">
+              {accountSecurity?.securityQuestion && (
+                <p className="mb-4 rounded-md border border-line bg-ink-50 p-3 text-sm text-ink-700">
+                  Pergunta atual: {accountSecurity.securityQuestion}
+                </p>
+              )}
+              <form action={updateSecurityRecovery} className="grid gap-3 sm:grid-cols-2">
+                <Field
+                  name="securityQuestion"
+                  label="Pergunta de recuperação"
+                  defaultValue={accountSecurity?.securityQuestion ?? ""}
+                  maxLength={200}
+                  required
+                />
+                <Field
+                  name="securityAnswer"
+                  label="Nova resposta de recuperação"
+                  maxLength={120}
+                  required
+                />
+                <Field
+                  name="confirmSecurityAnswer"
+                  label="Confirmar resposta"
+                  maxLength={120}
+                  required
+                />
+                <p className="text-sm text-ink-500 sm:col-span-2">
+                  Use uma resposta difícil de adivinhar e que não esteja publicada em redes sociais.
+                  A resposta não é exibida depois de salva.
+                </p>
+                <button className={buttonClass}>Salvar recuperação</button>
+              </form>
+            </Section>}
+
             {section === "users" && user.role === Role.ADMIN && <Section title={`Usuários (${users.length})`} description="Crie contas e altere nome, e-mail e nível de acesso.">
-          <form action={createUser} className="grid gap-3 rounded-md bg-ink-100 p-4 sm:grid-cols-2 lg:grid-cols-6">
+          <form action={createUser} className="grid gap-3 rounded-md bg-ink-100 p-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field name="firstName" label="Nome" required />
             <Field name="lastName" label="Sobrenome" />
             <Field name="email" label="E-mail" type="email" required />
             <Field name="password" label="Senha inicial" type="password" required />
+            <Field name="securityQuestion" label="Pergunta de recuperação" maxLength={200} required />
+            <Field name="securityAnswer" label="Resposta de recuperação" maxLength={120} required />
+            <Field name="confirmSecurityAnswer" label="Confirmar resposta" maxLength={120} required />
             <RoleSelect />
             <button className={buttonClass}>Criar usuário</button>
           </form>

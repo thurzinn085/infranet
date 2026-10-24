@@ -6,7 +6,8 @@ de senha, sessao persistente "lembrar de mim").
 
 ## Status atual
 
-- Login, cadastro sem confirmacao por e-mail, recuperacao de senha por codigo,
+- Login, cadastro sem confirmacao por e-mail, recuperacao de senha por pergunta
+  e resposta secreta,
   sessao com "lembrar de mim", primeira conta = Administrador
   (decidido no backend), mostrar/ocultar senha, PWA instalavel (manifest +
   service worker).
@@ -39,9 +40,8 @@ de senha, sessao persistente "lembrar de mim").
   projeto (API Routes), o que atende ao requisito de site e PWA serem a
   mesma aplicacao.
 - **Prisma** + **PostgreSQL** — banco de dados e modelos.
-- **bcryptjs** — hash de senhas e de codigos de recuperacao.
+- **bcryptjs** — hash de senhas e respostas de recuperacao.
 - **jose** — assinatura dos tokens de sessao (JWT).
-- **Resend** — envio de e-mails de recuperacao de senha.
 - **Tailwind CSS** — estilos.
 - **zod** — validacao de formularios no frontend e no backend.
 
@@ -58,14 +58,16 @@ Acesse `http://localhost:3000`. A primeira conta criada em `/register` recebe
 automaticamente o papel de Administrador; as seguintes recebem o papel de
 Usuário. Os perfis podem ser alterados por um administrador.
 
-Se `RESEND_API_KEY` nao estiver configurada, os e-mails de recuperacao sao
-apenas registrados no console do servidor (util para testar
-localmente sem uma conta de e-mail configurada) — o codigo aparece no
-terminal onde `npm run dev` esta rodando.
+Na criacao da conta, a pessoa cadastra uma pergunta e uma resposta de
+recuperacao. A resposta e armazenada como hash. Contas antigas podem cadastrar
+ou atualizar esses dados na secao "Seguranca da conta" enquanto estiverem
+conectadas; se perderem o acesso antes disso, um administrador precisa redefinir
+a senha. Perguntas pessoais nao equivalem a verificacao por e-mail: use uma
+resposta que nao seja publica nem facil de adivinhar.
 
 ## Hospedagem / Deploy (Secao 27 da especificacao)
 
-### Plataforma escolhida: Vercel (frontend + API) + Neon (banco de dados) + Resend (e-mail)
+### Plataforma escolhida: Vercel (frontend + API) + Neon (banco de dados)
 
 **Por que esta combinacao:**
 
@@ -78,9 +80,6 @@ terminal onde `npm run dev` esta rodando.
   gratuito que dorme apos inatividade".
 - **Neon** oferece PostgreSQL serverless com plano gratuito permanente,
   compativel com Prisma, e nao exige um servidor sempre ligado.
-- **Resend** tem um plano gratuito com volume suficiente para recuperacao
-  de senha em um projeto deste porte.
-
 Essa combinacao foi escolhida sem exigir mudancas na arquitetura: por ser
 Next.js full-stack, o mesmo codigo roda em dev e em producao.
 
@@ -89,19 +88,15 @@ Next.js full-stack, o mesmo codigo roda em dev e em producao.
 1. Suba o codigo para um repositorio no GitHub.
 2. Crie um banco em [neon.tech](https://neon.tech) (plano gratuito) e copie a
    `DATABASE_URL` fornecida.
-3. Crie uma conta em [resend.com](https://resend.com), gere uma API key e
-   verifique um dominio (ou use o dominio de testes deles para comecar).
-4. Em [vercel.com](https://vercel.com), importe o repositorio do GitHub.
-5. Em "Environment Variables", configure:
+3. Em [vercel.com](https://vercel.com), importe o repositorio do GitHub.
+4. Em "Environment Variables", configure:
    - `DATABASE_URL` (do Neon)
    - `AUTH_SECRET` (gere uma string aleatoria longa, ex: `openssl rand -base64 32`)
    - `APP_URL` (o dominio que a Vercel vai gerar, ex: `https://infranet.vercel.app`)
-   - `RESEND_API_KEY`
-   - `EMAIL_FROM`
-6. Antes do primeiro deploy funcionar de ponta a ponta, rode
+5. Antes do primeiro deploy funcionar de ponta a ponta, rode
    `npx prisma db push` apontando para a `DATABASE_URL` de producao (pode ser
    feito localmente, uma unica vez, para criar as tabelas).
-7. Clique em "Deploy". A Vercel cuida do HTTPS automaticamente.
+6. Clique em "Deploy". A Vercel cuida do HTTPS automaticamente.
 
 ### Atualizando o sistema
 
@@ -124,6 +119,12 @@ Depois de publicar uma versão que altera o `schema.prisma`, execute `npm run
 db:push` com `DATABASE_URL` apontando para o banco usado pela aplicação; sem
 isso, o banco não terá as colunas de proprietário necessárias ao painel.
 
+A recuperacao por pergunta adiciona colunas opcionais para pergunta, hash da
+resposta e controle temporario de tentativas na tabela `users`. Contas antigas
+continuam validas, mas precisam configurar pergunta e resposta na secao
+"Seguranca da conta" antes de poderem usar a recuperacao. Execute `npm run
+db:push` contra o banco da aplicacao antes de publicar esta versao.
+
 ### Verificando se esta no ar
 
 Acesse a URL publica e confirme que `/login` carrega. Um erro 500 geralmente
@@ -138,11 +139,8 @@ indica uma variavel de ambiente ausente — checar os logs da funcao na aba
   computo por mes — suficiente para este sistema, mas o banco pode ficar
   temporariamente inativo apos longos periodos sem uso (volta a responder
   automaticamente na proxima consulta, com uma pequena latencia inicial).
-- **Resend free tier**: limite mensal de e-mails enviados.
-
 ### Se o sistema crescer
 
-Migrar para os planos pagos de Vercel, Neon e Resend (ou para outra
-infraestrutura) nao exige mudar a arquitetura do codigo — apenas trocar as
-variaveis de ambiente e, se necessario, o provedor de banco/e-mail no arquivo
-`src/lib/email.ts`.
+Migrar para os planos pagos de Vercel e Neon (ou para outra infraestrutura)
+nao exige mudar a arquitetura do codigo — apenas trocar as variaveis de
+ambiente e, se necessario, o provedor de banco.
