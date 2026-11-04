@@ -123,6 +123,15 @@ body {
   animation: auth-copy-in 250ms ease both;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .auth-page *,
+  .auth-page *::before,
+  .auth-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .auth-cable {
   stroke-dasharray: 1;
   stroke-dashoffset: 0;

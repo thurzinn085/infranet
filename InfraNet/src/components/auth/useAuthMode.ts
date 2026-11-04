@@ -20,7 +20,7 @@ export function useAuthMode(initialMode: AuthMode) {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const mobile = window.matchMedia("(max-width: 767px)").matches;
-    const contentDelay = reducedMotion ? 0 : mobile ? 250 : 360;
+    const contentDelay = reducedMotion ? 0 : mobile ? 500 : 800;
 
     timer.current = setTimeout(() => {
       setContentMode(nextMode);

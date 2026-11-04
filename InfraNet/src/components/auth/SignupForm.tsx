@@ -92,10 +92,6 @@ export default function SignupForm({ onSwitchToLogin, onSuccess }: Props) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      <p className="rounded-xl border border-[#C8FF00]/30 bg-[#C8FF00]/[0.07] px-4 py-3 text-sm leading-5 text-[#e2f5a3]">
-        A primeira conta criada no sistema vira Administrador.
-      </p>
-
       {error && (
         <p role="alert" className="rounded-xl border border-white/30 bg-white/5 px-4 py-3 text-sm text-white">
           {error}
