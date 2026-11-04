@@ -139,6 +139,13 @@ function SectionIcon({ name }: { name: string }) {
           <circle cx="12" cy="10" r="2" />
         </>
       )}
+      {name === "infrastructures" && (
+        <>
+          <path d="M4 20V8l8-4 8 4v12" />
+          <path d="M2 20h20M8 11h2M14 11h2M8 15h2M14 15h2" />
+          <path d="M10 20v-3h4v3" />
+        </>
+      )}
       {name === "users" && (
         <>
           <circle cx="9" cy="8" r="3" />

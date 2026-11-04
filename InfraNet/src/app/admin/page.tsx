@@ -94,7 +94,8 @@ export default async function AdminPage({
     ]);
 
   const availableSections = [
-    { id: "locations", label: "Locais" },
+    { id: "locations", label: "Locais (primeiro passo)" },
+    ...(user.role === Role.ADMIN ? [{ id: "infrastructures", label: "Infraestruturas" }] : []),
     { id: "security", label: "Segurança da conta" },
     ...(user.role === Role.ADMIN ? [{ id: "users", label: "Usuários" }] : []),
     { id: "racks", label: "Racks" },
@@ -109,6 +110,19 @@ export default async function AdminPage({
     ? searchParams.section!
     : defaultSection;
   const userLocations = locationRecords.filter((location) => location.ownerId === user.id);
+  const infrastructureOverview = user.role === Role.ADMIN
+    ? users.map((account) => ({
+        id: account.id,
+        name: `${account.firstName} ${account.lastName ?? ""}`.trim(),
+        email: account.email,
+        role: normalizeRole(account.role),
+        locations: locationRecords.filter((location) => location.ownerId === account.id).map((location) => location.name),
+        racks: racks.filter((rack) => rack.ownerId === account.id).length,
+        switches: switches.filter((item) => item.ownerId === account.id).length,
+        patchPanels: patchPanels.filter((item) => item.ownerId === account.id).length,
+        points: points.filter((point) => point.ownerId === account.id).length,
+      }))
+    : [];
   const locationsForOwner = (ownerId: string | null) => locationRecords
     .filter((location) => location.ownerId === ownerId)
     .map((location) => location.name);
@@ -168,13 +182,28 @@ export default async function AdminPage({
               </p>
             )}
 
-            {section === "locations" && <Section id="locations" title={`Locais (${userLocations.length})`} description="Cadastre cada local uma vez. Racks e pontos de rede poderão selecionar os locais cadastrados, evitando variações de escrita.">
+            {section === "locations" && <Section
+              id="locations"
+              title={`Locais (${userLocations.length})`}
+              description="Comece por aqui: cadastre os prédios, andares, salas ou outros locais usados na infraestrutura. Depois, racks e pontos de rede poderão selecionar um local existente em vez de digitar um novo."
+            >
+              <div className="mb-5 rounded-lg border border-brand-700/30 bg-brand-50 p-4">
+                <p className="font-semibold text-ink-900">Primeiro passo: cadastre todos os locais</p>
+                <p className="mt-1 text-sm leading-5 text-ink-500">
+                  Os formulários de rack e ponto de rede usam esta lista e não aceitam locais digitados livremente.
+                </p>
+              </div>
               <form action={createLocation} className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <Field name="name" label="Nome do local" maxLength={120} required />
                 <button className={buttonClass}>Adicionar local</button>
               </form>
-              <div className="mt-4 space-y-2">
-                {userLocations.map((location) => (
+              {userLocations.length === 0 ? (
+                <p className="mt-4 rounded-lg border border-dashed border-line p-4 text-sm text-ink-500">
+                  Nenhum local cadastrado ainda. Adicione o primeiro acima para habilitar a seleção nos cadastros de racks e pontos de rede.
+                </p>
+              ) : (
+                <div className="mt-4 space-y-2">
+                  {userLocations.map((location) => (
                   <div key={location.id} className="flex items-center justify-between gap-3 rounded-md border border-line p-3">
                     <span className="font-medium text-ink-900">{location.name}</span>
                     <form action={deleteLocation}>
@@ -182,7 +211,59 @@ export default async function AdminPage({
                       <ConfirmButton message={`Excluir o local ${location.name}?`}>Excluir</ConfirmButton>
                     </form>
                   </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </Section>}
+
+            {section === "infrastructures" && user.role === Role.ADMIN && <Section
+              id="infrastructures"
+              title={`Infraestruturas de todas as contas (${infrastructureOverview.length})`}
+              description="Visão geral dos locais e equipamentos de cada conta. As seções de racks, switches, patch panels, pontos e certificações também exibem os registros de todos os usuários."
+            >
+              <div className="grid gap-3">
+                {infrastructureOverview.map((infrastructure) => {
+                  const totalItems =
+                    infrastructure.racks +
+                    infrastructure.switches +
+                    infrastructure.patchPanels +
+                    infrastructure.points;
+                  return (
+                    <article key={infrastructure.id} className="rounded-lg border border-line bg-ink-100 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-ink-300">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-semibold text-ink-900">{infrastructure.name}</h3>
+                          <p className="mt-1 text-sm text-ink-500">
+                            {infrastructure.email} · {roleLabel(infrastructure.role)}
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-line px-3 py-1 text-xs font-medium text-ink-700">
+                          {totalItems} {totalItems === 1 ? "item" : "itens"}
+                        </span>
+                      </div>
+                      <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <InfrastructureCount label="Racks" value={infrastructure.racks} />
+                        <InfrastructureCount label="Switches" value={infrastructure.switches} />
+                        <InfrastructureCount label="Patch panels" value={infrastructure.patchPanels} />
+                        <InfrastructureCount label="Pontos" value={infrastructure.points} />
+                      </dl>
+                      <div className="mt-4 border-t border-line pt-3">
+                        <p className="text-xs font-medium text-ink-500">Locais cadastrados</p>
+                        {infrastructure.locations.length > 0 ? (
+                          <ul className="mt-2 flex flex-wrap gap-2">
+                            {infrastructure.locations.map((location) => (
+                              <li key={location} className="rounded-full bg-ink-50 px-3 py-1 text-xs text-ink-700">{location}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-sm text-ink-500">
+                            {totalItems > 0 ? "Há equipamentos sem locais cadastrados." : "Nenhum local ou equipamento cadastrado."}
+                          </p>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </Section>}
 
@@ -644,7 +725,9 @@ function LocationSelect({ locations, defaultValue = "" }: {
     <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
       Localização
       <select name="location" defaultValue={defaultValue} className={inputClass} required>
-        <option value="">Selecione um local cadastrado</option>
+        <option value="">
+          {locations.length > 0 ? "Selecione um local cadastrado" : "Cadastre locais primeiro"}
+        </option>
         {defaultValue && !locations.includes(defaultValue) && (
           <option value={defaultValue}>{defaultValue} (localização atual)</option>
         )}
@@ -653,6 +736,15 @@ function LocationSelect({ locations, defaultValue = "" }: {
         ))}
       </select>
     </label>
+  );
+}
+
+function InfrastructureCount({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border border-line bg-white px-3 py-2">
+      <dt className="text-xs text-ink-500">{label}</dt>
+      <dd className="mt-1 text-lg font-semibold tabular-nums text-ink-900">{value.toLocaleString("pt-BR")}</dd>
+    </div>
   );
 }
 

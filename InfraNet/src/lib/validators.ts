@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isPasswordValid } from "./password";
+import { isPasswordValid } from "./password-rules";
 
 const passwordSchema = z
   .string()

@@ -28,33 +28,33 @@ const PasswordField = forwardRef<HTMLInputElement, Props>(
 
     return (
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={fieldId} className="text-sm font-medium text-neutral-200">
+        <label htmlFor={fieldId} className="text-sm font-medium text-white">
           {label}
         </label>
         <div
-          className={`flex h-11 items-center rounded-md border pr-2 transition-colors
-            bg-neutral-950 focus-within:border-neutral-400 focus-within:ring-2 focus-within:ring-neutral-400/20
-            ${error ? "border-red-400" : "border-neutral-700"}`}
+          className={`flex min-h-12 items-center rounded-xl border bg-[#171717] pr-2 transition-colors
+            focus-within:border-[#C8FF00] focus-within:ring-2 focus-within:ring-[#C8FF00]/20
+            ${error ? "border-white/70" : "border-[#2b2b2b]"}`}
         >
           <input
             ref={ref}
             id={fieldId}
             type={visible ? "text" : "password"}
-            className="h-full w-full rounded-md bg-transparent px-3 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none"
+            className="h-12 w-full min-w-0 rounded-xl bg-transparent px-3 text-base text-white placeholder:text-[#777] outline-none"
             aria-invalid={!!error}
+            aria-describedby={error ? `${fieldId}-error` : undefined}
             {...props}
           />
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-neutral-400 hover:bg-neutral-800"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#b8b8b8] transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8FF00]"
             aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
-            tabIndex={-1}
           >
             <EyeIcon open={visible} />
           </button>
         </div>
-        {error && <p className="text-xs text-red-300">{error}</p>}
+        {error && <p id={`${fieldId}-error`} className="text-xs text-white">{error}</p>}
       </div>
     );
   }

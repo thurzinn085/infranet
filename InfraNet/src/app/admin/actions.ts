@@ -30,6 +30,7 @@ const securityRecoveryFields = z.object(securityRecoveryShape).refine((data) => 
 
 const adminSections = new Set([
   "locations",
+  "infrastructures",
   "security",
   "users",
   "racks",

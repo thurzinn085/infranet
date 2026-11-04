@@ -14,10 +14,10 @@ export default function Button({
   ...props
 }: Props) {
   const base =
-    "h-11 rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+    "min-h-12 rounded-xl px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60";
   const variants = {
-    primary: "bg-neutral-100 text-neutral-900 hover:bg-neutral-300",
-    secondary: "border border-neutral-700 text-neutral-200 hover:bg-neutral-800",
+    primary: "bg-[#C8FF00] text-[#101010] hover:bg-[#d6ff45]",
+    secondary: "border border-[#2b2b2b] text-white hover:bg-white/10",
   };
 
   return (

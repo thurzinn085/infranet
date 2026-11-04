@@ -72,21 +72,23 @@ export default async function DashboardPage() {
             <div>
               <p className="text-sm font-medium text-ink-500">
                 {user.role === "ADMIN" ? (
-                  <span className="font-mono uppercase tracking-[0.16em]">System overview · Admin</span>
+                  <span className="font-mono uppercase tracking-[0.16em]">Visão geral · Admin</span>
                 ) : "Visão geral · Minha infraestrutura"}
               </p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
                 Olá, {user.firstName}.
               </h1>
               <p className="mt-2 text-sm text-ink-500">
-                Aqui está o resumo da sua infraestrutura de rede.
+                {user.role === "ADMIN"
+                  ? "Resumo das infraestruturas de todas as contas."
+                  : "Aqui está o resumo da sua infraestrutura de rede."}
               </p>
             </div>
             <Link
-              href="/admin"
+              href={user.role === "ADMIN" ? "/admin?section=infrastructures" : "/admin"}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:ring-offset-2"
             >
-              {user.role === "ADMIN" ? "Abrir administração" : "Gerenciar infraestrutura"}
+              {user.role === "ADMIN" ? "Ver todas as infraestruturas" : "Gerenciar infraestrutura"}
               <span aria-hidden="true">→</span>
             </Link>
           </div>
@@ -101,7 +103,9 @@ export default async function DashboardPage() {
         {!hasData && (
           <section className="mt-6 rounded-xl border border-dashed border-ink-300 bg-white p-6 sm:p-8">
             <p className="text-sm font-medium text-ink-500">Primeiro passo</p>
-            <h2 className="mt-1 text-xl font-semibold text-ink-900">Comece organizando sua infraestrutura</h2>
+            <h2 className="mt-1 text-xl font-semibold text-ink-900">
+              {user.role === "ADMIN" ? "Nenhuma infraestrutura cadastrada" : "Comece organizando sua infraestrutura"}
+            </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-600">
               Cadastre um rack ou um ponto de rede. Depois, associe os equipamentos, registre os testes
               e monte a lista de materiais conforme o projeto evolui.
@@ -121,7 +125,9 @@ export default async function DashboardPage() {
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-ink-500">Acesso rápido</p>
-              <h2 id="inventory-heading" className="mt-1 text-xl font-semibold text-ink-900">Sua infraestrutura</h2>
+              <h2 id="inventory-heading" className="mt-1 text-xl font-semibold text-ink-900">
+                {user.role === "ADMIN" ? "Infraestruturas de todas as contas" : "Sua infraestrutura"}
+              </h2>
             </div>
             <Link href="/help" className="hidden text-sm font-medium text-ink-600 underline underline-offset-4 hover:text-ink-900 sm:block">
               Como usar o painel

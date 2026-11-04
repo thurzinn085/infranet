@@ -6,7 +6,7 @@ import TextField from "@/components/ui/TextField";
 import PasswordField from "@/components/ui/PasswordField";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
-import { checkPasswordRules } from "@/lib/password";
+import { checkPasswordRules } from "@/lib/password-rules";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
