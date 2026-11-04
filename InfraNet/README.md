@@ -18,11 +18,11 @@ de senha, sessao persistente "lembrar de mim").
   Os dados de cada usuário são isolados no servidor. A BOM apresenta a média
   simples dos custos unitários dos materiais e o custo total estimado
   (quantidade × custo unitário).
-- Cada usuário cadastra seus próprios locais na aba "Locais"; racks e pontos de
-  rede selecionam um local já cadastrado. Nomes repetidos ignorando acentos,
-  espaços e pontuação são bloqueados. Pontos podem ser associados a uma porta
-  de patch panel e a uma porta de switch; a tela exibe o equipamento,
-  rack/localização e número da porta.
+- Cada usuário cadastra seus próprios locais na aba "Locais"; os racks
+  selecionam um local já cadastrado. Nomes repetidos ignorando acentos,
+  espaços e pontuação são bloqueados. Switches e patch panels exigem um rack.
+  Pontos de rede podem ser associados a um equipamento e número de entrada
+  tanto no patch panel quanto no switch.
 - A BOM sugere um preço inicial para cada material do catálogo, mas esses
   valores são estimativas para planejamento. A lista de referências ao final
   mostra apenas os materiais adicionados à BOM; confira a cotação e ajuste o

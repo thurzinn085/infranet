@@ -57,8 +57,8 @@ function ownerScope(user: Awaited<ReturnType<typeof requireUser>>) {
   return user.role === "ADMIN" ? {} : { ownerId: user.id };
 }
 
-async function ensureRackAccess(user: Awaited<ReturnType<typeof requireUser>>, rackId: string | null) {
-  if (rackId && !await db.rack.findFirst({ where: { id: rackId, ...ownerScope(user) }, select: { id: true } })) {
+async function ensureRackAccess(user: Awaited<ReturnType<typeof requireUser>>, rackId: string) {
+  if (!await db.rack.findFirst({ where: { id: rackId, ...ownerScope(user) }, select: { id: true } })) {
     report("error", "Rack não encontrado na sua infraestrutura.");
   }
 }
@@ -79,16 +79,37 @@ async function ensureLocationAccess(
   }
 }
 
-async function ensurePortAccess(
+const optionalPortNumber = z.string().trim().transform((value) => value ? Number(value) : null)
+  .refine((value) => value === null || (Number.isInteger(value) && value >= 1 && value <= 512));
+
+async function resolveSwitchPort(
   user: Awaited<ReturnType<typeof requireUser>>,
-  portId: string | null,
-  kind: "switch" | "patchPanel"
+  switchId: string | null,
+  portNumber: number | null
 ) {
-  if (!portId) return;
-  const port = kind === "switch"
-    ? await db.switchPort.findFirst({ where: { id: portId, switch: ownerScope(user) }, select: { id: true } })
-    : await db.patchPanelPort.findFirst({ where: { id: portId, patchPanel: ownerScope(user) }, select: { id: true } });
-  if (!port) report("error", "Porta não encontrada na sua infraestrutura.");
+  if (!switchId && portNumber === null) return null;
+  if (!switchId || portNumber === null) report("error", "Selecione o switch e informe o número da entrada.");
+  const port = await db.switchPort.findFirst({
+    where: { switchId, number: portNumber, switch: ownerScope(user) },
+    select: { id: true },
+  });
+  if (!port) report("error", "Entrada não encontrada no switch selecionado.");
+  return port.id;
+}
+
+async function resolvePatchPanelPort(
+  user: Awaited<ReturnType<typeof requireUser>>,
+  patchPanelId: string | null,
+  portNumber: number | null
+) {
+  if (!patchPanelId && portNumber === null) return null;
+  if (!patchPanelId || portNumber === null) report("error", "Selecione o patch panel e informe o número da entrada.");
+  const port = await db.patchPanelPort.findFirst({
+    where: { patchPanelId, number: portNumber, patchPanel: ownerScope(user) },
+    select: { id: true },
+  });
+  if (!port) report("error", "Entrada não encontrada no patch panel selecionado.");
+  return port.id;
 }
 
 function refreshAdmin(message: string) {
@@ -266,12 +287,9 @@ export async function deleteLocation(formData: FormData) {
   });
   if (!location) report("error", "Local não encontrado.");
 
-  const [racks, points] = await Promise.all([
-    db.rack.count({ where: { ownerId: user.id, location: location.name } }),
-    db.networkPoint.count({ where: { ownerId: user.id, location: location.name } }),
-  ]);
-  if (racks + points > 0) {
-    report("error", "Este local está sendo usado por racks ou pontos de rede. Altere esses registros antes de excluí-lo.");
+  const racks = await db.rack.count({ where: { ownerId: user.id, location: location.name } });
+  if (racks > 0) {
+    report("error", "Este local está sendo usado por racks. Altere esses registros antes de excluí-lo.");
   }
 
   await db.infrastructureLocation.delete({ where: { id: location.id } });
@@ -327,12 +345,12 @@ const deviceFields = z.object({
   name: nameSchema,
   model: optionalText,
   portCount: portCountSchema,
-  rackId: optionalId,
+  rackId: idSchema,
 });
 const patchPanelFields = z.object({
   name: nameSchema,
   portCount: portCountSchema,
-  rackId: optionalId,
+  rackId: idSchema,
 });
 export async function createSwitch(formData: FormData) {
   const user = await requireUser();
@@ -430,61 +448,74 @@ export async function deletePatchPanel(formData: FormData) {
 
 const pointFields = z.object({
   code: nameSchema,
-  location: locationNameSchema,
   cableCategory: z.nativeEnum(CableCategory),
-  patchPanelPortId: optionalId,
-  switchPortId: optionalId,
+  patchPanelId: optionalId,
+  patchPanelPortNumber: optionalPortNumber,
+  switchId: optionalId,
+  switchPortNumber: optionalPortNumber,
 });
 export async function createNetworkPoint(formData: FormData) {
   const user = await requireUser();
   const parsed = pointFields.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) report("error", "Confira o código, local e categoria do ponto.");
-  await ensureLocationAccess(user, parsed.data.location, user.id);
+  if (!parsed.success) report("error", "Confira o código, categoria e entradas do ponto.");
   if (await db.networkPoint.findFirst({
     where: { code: parsed.data.code, ownerId: user.id },
     select: { id: true },
   })) {
     report("error", "Já existe um ponto com este código.");
   }
-  await ensurePortAccess(user, parsed.data.patchPanelPortId, "patchPanel");
-  await ensurePortAccess(user, parsed.data.switchPortId, "switch");
-  if (parsed.data.patchPanelPortId && await db.networkPoint.findFirst({
-    where: { patchPanelPortId: parsed.data.patchPanelPortId }, select: { id: true },
+  const [patchPanelPortId, switchPortId] = await Promise.all([
+    resolvePatchPanelPort(user, parsed.data.patchPanelId, parsed.data.patchPanelPortNumber),
+    resolveSwitchPort(user, parsed.data.switchId, parsed.data.switchPortNumber),
+  ]);
+  if (patchPanelPortId && await db.networkPoint.findFirst({
+    where: { patchPanelPortId }, select: { id: true },
   })) report("error", "A porta do patch panel já está vinculada a outro ponto.");
-  if (parsed.data.switchPortId && await db.networkPoint.findFirst({
-    where: { switchPortId: parsed.data.switchPortId }, select: { id: true },
+  if (switchPortId && await db.networkPoint.findFirst({
+    where: { switchPortId }, select: { id: true },
   })) report("error", "A porta do switch já está vinculada a outro ponto.");
-  await db.networkPoint.create({ data: { ...parsed.data, ownerId: user.id } });
+  await db.networkPoint.create({
+    data: {
+      code: parsed.data.code,
+      location: null,
+      cableCategory: parsed.data.cableCategory,
+      patchPanelPortId,
+      switchPortId,
+      ownerId: user.id,
+    },
+  });
   refreshAdmin("Ponto de rede criado.");
 }
 export async function updateNetworkPoint(formData: FormData) {
   const user = await requireUser();
   const parsed = pointFields.extend({ id: idSchema }).safeParse(Object.fromEntries(formData));
-  if (!parsed.success) report("error", "Confira os dados do ponto de rede.");
+  if (!parsed.success) report("error", "Confira o código, categoria e entradas do ponto.");
   const { id, ...data } = parsed.data;
   const existing = await db.networkPoint.findFirst({
     where: { id, ...ownerScope(user) },
-    select: { id: true, ownerId: true, location: true },
+    select: { id: true, ownerId: true },
   });
   if (!existing) report("error", "Ponto não encontrado na sua infraestrutura.");
-  if (data.location !== existing.location) {
-    await ensureLocationAccess(user, data.location, existing.ownerId);
-  }
   if (await db.networkPoint.findFirst({
     where: { code: data.code, ownerId: existing.ownerId, id: { not: id } },
     select: { id: true },
   })) {
     report("error", "Já existe um ponto com este código.");
   }
-  await ensurePortAccess(user, data.patchPanelPortId, "patchPanel");
-  await ensurePortAccess(user, data.switchPortId, "switch");
-  if (data.patchPanelPortId && await db.networkPoint.findFirst({
-    where: { patchPanelPortId: data.patchPanelPortId, id: { not: id } }, select: { id: true },
+  const [patchPanelPortId, switchPortId] = await Promise.all([
+    resolvePatchPanelPort(user, data.patchPanelId, data.patchPanelPortNumber),
+    resolveSwitchPort(user, data.switchId, data.switchPortNumber),
+  ]);
+  if (patchPanelPortId && await db.networkPoint.findFirst({
+    where: { patchPanelPortId, id: { not: id } }, select: { id: true },
   })) report("error", "A porta do patch panel já está vinculada a outro ponto.");
-  if (data.switchPortId && await db.networkPoint.findFirst({
-    where: { switchPortId: data.switchPortId, id: { not: id } }, select: { id: true },
+  if (switchPortId && await db.networkPoint.findFirst({
+    where: { switchPortId, id: { not: id } }, select: { id: true },
   })) report("error", "A porta do switch já está vinculada a outro ponto.");
-  await db.networkPoint.update({ where: { id }, data });
+  await db.networkPoint.update({
+    where: { id },
+    data: { code: data.code, location: null, cableCategory: data.cableCategory, patchPanelPortId, switchPortId },
+  });
   refreshAdmin("Ponto de rede atualizado.");
 }
 export async function deleteNetworkPoint(formData: FormData) {

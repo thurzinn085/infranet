@@ -15,13 +15,13 @@ const sections = [
   },
   {
     id: "patch-panels",
-    title: "Patch panels",
+    title: "Patche Panels",
     description: "Informe um nome, a quantidade de portas e o rack. O sistema cria as portas para que você possa associá-las aos pontos de rede.",
   },
   {
     id: "network-points",
-    title: "Pontos de rede",
-    description: "Cada ponto precisa de um código único na sua infraestrutura, localização e categoria de cabo. Se souber a ligação física, associe uma porta de switch e/ou patch panel.",
+    title: "Pontos de Rede",
+    description: "Cada ponto precisa de um código único e uma categoria de cabo. Se souber a ligação física, selecione o switch e o patch panel e informe o número de cada entrada.",
   },
   {
     id: "certifications",

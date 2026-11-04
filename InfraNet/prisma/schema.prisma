@@ -168,7 +168,7 @@ model NetworkPoint {
   id               String        @id @default(cuid())
   ownerId          String?
   code             String // identificador impresso na etiqueta
-  location         String
+  location         String?
   cableCategory    CableCategory
   patchPanelPortId String?       @unique
   switchPortId     String?       @unique

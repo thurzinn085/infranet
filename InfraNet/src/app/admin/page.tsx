@@ -49,7 +49,7 @@ export default async function AdminPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [users, racks, switches, patchPanels, points, switchPorts, panelPorts, tests, bomItems, bomSettings, locationRecords] =
+  const [users, racks, switches, patchPanels, points, tests, bomItems, bomSettings, locationRecords] =
     await Promise.all([
       user.role === Role.ADMIN ? db.user.findMany({ orderBy: { createdAt: "asc" } }) : [],
       db.rack.findMany({ where: user.role === Role.ADMIN ? {} : { ownerId: user.id }, orderBy: { name: "asc" } }),
@@ -62,16 +62,6 @@ export default async function AdminPage({
           switchPort: { include: { switch: { include: { rack: true } } } },
         },
         orderBy: { code: "asc" },
-      }),
-      db.switchPort.findMany({
-        where: user.role === Role.ADMIN ? {} : { switch: { ownerId: user.id } },
-        include: { switch: { include: { rack: true } } },
-        orderBy: { number: "asc" },
-      }),
-      db.patchPanelPort.findMany({
-        where: user.role === Role.ADMIN ? {} : { patchPanel: { ownerId: user.id } },
-        include: { patchPanel: { include: { rack: true } } },
-        orderBy: { number: "asc" },
       }),
       db.certificationTest.findMany({
         where: user.role === Role.ADMIN ? {} : { networkPoint: { ownerId: user.id } },
@@ -89,13 +79,13 @@ export default async function AdminPage({
     ]);
 
   const availableSections = [
-    { id: "locations", label: "Locais (primeiro passo)" },
     ...(user.role === Role.ADMIN ? [{ id: "infrastructures", label: "Infraestruturas" }] : []),
     ...(user.role === Role.ADMIN ? [{ id: "users", label: "Usuários" }] : []),
+    { id: "locations", label: "Locais" },
     { id: "racks", label: "Racks" },
     { id: "switches", label: "Switches" },
-    { id: "patch-panels", label: "Patch panels" },
-    { id: "network-points", label: "Pontos de rede" },
+    { id: "patch-panels", label: "Patche Panels" },
+    { id: "network-points", label: "Pontos de Rede" },
     { id: "certifications", label: "Certificações" },
     { id: "bom", label: "Materiais / BOM" },
   ];
@@ -179,12 +169,12 @@ export default async function AdminPage({
             {section === "locations" && <Section
               id="locations"
               title={`Locais (${userLocations.length})`}
-              description="Comece por aqui: cadastre os prédios, andares, salas ou outros locais usados na infraestrutura. Depois, racks e pontos de rede poderão selecionar um local existente em vez de digitar um novo."
+              description="Cadastre os prédios, andares, salas ou outros locais usados para organizar os racks."
             >
               <div className="mb-5 rounded-lg border border-brand-700/30 bg-brand-50 p-4">
-                <p className="font-semibold text-ink-900">Primeiro passo: cadastre todos os locais</p>
+                <p className="font-semibold text-ink-900">Locais da infraestrutura</p>
                 <p className="mt-1 text-sm leading-5 text-ink-500">
-                  Os formulários de rack e ponto de rede usam esta lista e não aceitam locais digitados livremente.
+                  Os formulários de rack usam esta lista e não aceitam locais digitados livremente.
                 </p>
               </div>
               <form action={createLocation} className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -193,7 +183,7 @@ export default async function AdminPage({
               </form>
               {userLocations.length === 0 ? (
                 <p className="mt-4 rounded-lg border border-dashed border-line p-4 text-sm text-ink-500">
-                  Nenhum local cadastrado ainda. Adicione o primeiro acima para habilitar a seleção nos cadastros de racks e pontos de rede.
+                  Nenhum local cadastrado ainda. Adicione o primeiro acima para habilitar a seleção nos cadastros de racks.
                 </p>
               ) : (
                 <div className="mt-4 space-y-2">
@@ -353,7 +343,7 @@ export default async function AdminPage({
           deleteMessage="Excluir switch"
         />}
         {section === "patch-panels" && <DeviceSection
-          title={`Patch panels (${patchPanels.length})`}
+          title={`Patche Panels (${patchPanels.length})`}
           id="patch-panels"
           action={createPatchPanel}
           updateAction={updatePatchPanel}
@@ -364,19 +354,20 @@ export default async function AdminPage({
           showModel={false}
         />}
 
-        {section === "network-points" && <Section id="network-points" title={`Pontos de rede (${points.length})`} description="Gerencie identificador, localização, categoria do cabo e as portas conectadas no patch panel e no switch.">
+        {section === "network-points" && <Section id="network-points" title={`Pontos de Rede (${points.length})`} description="Gerencie o identificador, a categoria do cabo e as entradas conectadas no patch panel e no switch.">
           <form action={createNetworkPoint} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Field name="code" label="Código" required />
-            <LocationSelect locations={userLocations.map((location) => location.name)} />
             <CableSelect />
-            <PortSelect name="patchPanelPortId" label="Porta do patch panel" ports={panelPorts.map((port) => ({
-              id: port.id,
-              label: `${port.patchPanel.name} · ${rackLabel(port.patchPanel.rack)} · porta ${port.number}`,
+            <EquipmentSelect name="patchPanelId" label="Patch panel" equipments={patchPanels.map((panel) => ({
+              id: panel.id,
+              label: `${panel.name} · ${rackLabel(panel.rack)}`,
             }))} />
-            <PortSelect name="switchPortId" label="Porta do switch" ports={switchPorts.map((port) => ({
-              id: port.id,
-              label: `${port.switch.name} · ${rackLabel(port.switch.rack)} · porta ${port.number}`,
+            <Field name="patchPanelPortNumber" label="Entrada do patch panel" type="number" min="1" max="512" step="1" />
+            <EquipmentSelect name="switchId" label="Switch" equipments={switches.map((item) => ({
+              id: item.id,
+              label: `${item.name} · ${rackLabel(item.rack)}`,
             }))} />
+            <Field name="switchPortNumber" label="Entrada do switch" type="number" min="1" max="512" step="1" />
             <button className={buttonClass}>Adicionar ponto</button>
           </form>
           <div className="mt-4 space-y-3">
@@ -385,7 +376,7 @@ export default async function AdminPage({
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
                   <span>
                     <span className="block font-medium text-ink-900">{point.code}</span>
-                    <span className="text-sm text-ink-500">{point.location} · {point.cableCategory.replace("_", " ")}</span>
+                    <span className="text-sm text-ink-500">{point.cableCategory.replace("_", " ")}</span>
                     <span className="block text-sm text-ink-500">
                       Patch panel: {point.patchPanelPort
                         ? `${point.patchPanelPort.patchPanel.name} · ${rackLabel(point.patchPanelPort.patchPanel.rack)} · porta ${point.patchPanelPort.number}`
@@ -403,21 +394,21 @@ export default async function AdminPage({
                   <form action={updateNetworkPoint} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     <input type="hidden" name="id" value={point.id} />
                     <Field name="code" label="Código" defaultValue={point.code} required />
-                    <LocationSelect
-                      locations={locationsForOwner(point.ownerId)}
-                      defaultValue={point.location}
-                    />
                     <CableSelect defaultValue={point.cableCategory} />
-                    <PortSelect name="patchPanelPortId" label="Patch panel" defaultValue={point.patchPanelPortId ?? ""}
-                      ports={panelPorts.map((port) => ({
-                        id: port.id,
-                        label: `${port.patchPanel.name} · ${rackLabel(port.patchPanel.rack)} · porta ${port.number}`,
+                    <EquipmentSelect name="patchPanelId" label="Patch panel" defaultValue={point.patchPanelPort?.patchPanelId ?? ""}
+                      equipments={patchPanels.map((panel) => ({
+                        id: panel.id,
+                        label: `${panel.name} · ${rackLabel(panel.rack)}`,
                       }))} />
-                    <PortSelect name="switchPortId" label="Switch" defaultValue={point.switchPortId ?? ""}
-                      ports={switchPorts.map((port) => ({
-                        id: port.id,
-                        label: `${port.switch.name} · ${rackLabel(port.switch.rack)} · porta ${port.number}`,
+                    <Field name="patchPanelPortNumber" label="Entrada do patch panel" type="number" min="1" max="512" step="1"
+                      defaultValue={point.patchPanelPort?.number ?? ""} />
+                    <EquipmentSelect name="switchId" label="Switch" defaultValue={point.switchPort?.switchId ?? ""}
+                      equipments={switches.map((item) => ({
+                        id: item.id,
+                        label: `${item.name} · ${rackLabel(item.rack)}`,
                       }))} />
+                    <Field name="switchPortNumber" label="Entrada do switch" type="number" min="1" max="512" step="1"
+                      defaultValue={point.switchPort?.number ?? ""} />
                     <button className={buttonClass}>Salvar ponto</button>
                   </form>
                   <form action={deleteNetworkPoint} className="flex items-end">
@@ -659,17 +650,18 @@ function Field({
 }
 
 function SelectField({
-  name, label, defaultValue, children,
+  name, label, defaultValue, required, children,
 }: {
   name: string;
   label: string;
   defaultValue?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <label className="flex min-w-0 flex-col gap-1 text-xs font-medium text-ink-700">
       {label}
-      <select name={name} defaultValue={defaultValue} className={inputClass}>{children}</select>
+      <select name={name} defaultValue={defaultValue} className={inputClass} required={required}>{children}</select>
     </label>
   );
 }
@@ -752,27 +744,27 @@ function ResultSelect({ defaultValue = "PENDENTE" }: { defaultValue?: TestResult
   );
 }
 
-function PortSelect({ name, label, ports, defaultValue = "" }: {
+function EquipmentSelect({ name, label, equipments, defaultValue = "" }: {
   name: string;
   label: string;
-  ports: { id: string; label: string }[];
+  equipments: { id: string; label: string }[];
   defaultValue?: string;
 }) {
   return (
     <SelectField name={name} label={label} defaultValue={defaultValue}>
       <option value="">Sem vínculo</option>
-      {ports.map((port) => <option key={port.id} value={port.id}>{port.label}</option>)}
+      {equipments.map((equipment) => <option key={equipment.id} value={equipment.id}>{equipment.label}</option>)}
     </SelectField>
   );
 }
 
 function PointSelect({ points, defaultValue }: {
-  points: { id: string; code: string; location: string }[];
+  points: { id: string; code: string }[];
   defaultValue?: string;
 }) {
   return (
     <SelectField name="networkPointId" label="Ponto de rede" defaultValue={defaultValue ?? points[0]?.id}>
-      {points.map((point) => <option key={point.id} value={point.id}>{point.code} · {point.location}</option>)}
+      {points.map((point) => <option key={point.id} value={point.id}>{point.code}</option>)}
     </SelectField>
   );
 }
@@ -841,8 +833,8 @@ function RackSelect({ racks, defaultValue = "" }: {
   defaultValue?: string;
 }) {
   return (
-    <SelectField name="rackId" label="Rack" defaultValue={defaultValue}>
-      <option value="">Sem rack</option>
+    <SelectField name="rackId" label="Rack" defaultValue={defaultValue} required>
+      <option value="">Selecione um rack</option>
       {racks.map((rack) => (
         <option key={rack.id} value={rack.id}>{rack.name} · {rack.location || "Localização não informada"}</option>
       ))}
