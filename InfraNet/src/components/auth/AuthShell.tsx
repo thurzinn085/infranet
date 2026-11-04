@@ -67,20 +67,17 @@ export default function AuthShell({ initialMode }: { initialMode: AuthMode }) {
           movingSignup ? "md:translate-x-[calc(100%_+_20px)]" : "md:translate-x-0"
           }`}
         >
-          <div className="mb-auto hidden h-8 w-8 md:block" aria-hidden="true">
-            {/* Espaço reservado para o futuro logo. */}
-          </div>
           <div
             key={contentMode}
-            className="auth-feature-copy relative z-10"
+            className="auth-feature-copy relative z-10 mx-auto w-full max-w-[390px] text-center"
             aria-live="polite"
           >
-            <p className="max-w-[390px] font-display text-[clamp(1.45rem,3vw,2.4rem)] font-semibold leading-[1.08] tracking-[-0.045em]">
+            <p className="mx-auto max-w-[390px] font-display text-[clamp(1.45rem,3vw,2.4rem)] font-semibold leading-[1.08] tracking-[-0.045em]">
               {signupMode
                 ? "Comece agora e mapeie a sua rede."
                 : "Gerencie sua infraestrutura de forma inteligente."}
             </p>
-            <p className="mt-3 hidden max-w-[370px] text-sm leading-6 text-[#101010]/75 md:block">
+            <p className="mx-auto mt-3 hidden max-w-[370px] text-sm leading-6 text-[#101010]/75 md:block">
               {signupMode
                 ? "Crie a conta e cadastre locais, racks e pontos de rede."
                 : "Pontos de rede, racks e testes de certificação num só lugar."}
@@ -88,7 +85,7 @@ export default function AuthShell({ initialMode }: { initialMode: AuthMode }) {
           </div>
           <div className="pointer-events-none absolute -bottom-16 -right-10 h-48 w-48 rounded-full border border-[#101010]/10 md:hidden" />
           <div className="pointer-events-none absolute -bottom-24 -right-2 h-48 w-48 rounded-full border border-[#101010]/10 md:hidden" />
-          <div className="pointer-events-none absolute bottom-2 right-6 hidden w-[86%] opacity-90 md:block">
+          <div className="pointer-events-none absolute bottom-2 right-6 z-0 hidden w-[86%] opacity-90 md:block">
             <AuthIllustration signupMode={signupMode} />
           </div>
         </section>
