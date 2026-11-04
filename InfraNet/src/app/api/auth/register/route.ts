@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { registerSchema } from "@/lib/validators";
-import { hashPassword, hashSecurityAnswer } from "@/lib/password";
+import { hashPassword } from "@/lib/password";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { firstName, lastName, email, password, securityQuestion, securityAnswer } = parsed.data;
+  const { firstName, lastName, email, password } = parsed.data;
 
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) {
@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
   const role = userCount === 0 ? "ADMIN" : "LEITOR";
 
   const passwordHash = await hashPassword(password);
-  const securityAnswerHash = await hashSecurityAnswer(securityAnswer);
 
   await db.user.create({
     data: {
@@ -39,8 +38,6 @@ export async function POST(req: NextRequest) {
       lastName,
       email,
       passwordHash,
-      securityQuestion,
-      securityAnswerHash,
       role,
     },
   });

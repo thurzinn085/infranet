@@ -30,10 +30,6 @@ export default function SignupForm({ onSwitchToLogin, onSuccess }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [securityQuestion, setSecurityQuestion] = useState("");
-  const [securityAnswer, setSecurityAnswer] = useState("");
-  const [confirmSecurityAnswer, setConfirmSecurityAnswer] = useState("");
-  const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -50,9 +46,6 @@ export default function SignupForm({ onSwitchToLogin, onSuccess }: Props) {
       email,
       password,
       confirmPassword,
-      securityQuestion,
-      securityAnswer,
-      confirmSecurityAnswer,
     });
 
     if (!parsed.success) {
@@ -62,9 +55,6 @@ export default function SignupForm({ onSwitchToLogin, onSuccess }: Props) {
           ? "A senha precisa ter pelo menos 6 caracteres, uma letra maiúscula e um número."
           : formatValidationMessage(issue.message),
       ])));
-      if (parsed.error.issues.some((issue) => ["securityQuestion", "securityAnswer", "confirmSecurityAnswer"].includes(String(issue.path[0])))) {
-        setRecoveryOpen(true);
-      }
       return;
     }
 
@@ -159,60 +149,6 @@ export default function SignupForm({ onSwitchToLogin, onSuccess }: Props) {
         }}
         error={fieldErrors.confirmPassword}
       />
-
-      <details
-        open={recoveryOpen}
-        onToggle={(event) => setRecoveryOpen(event.currentTarget.open)}
-        className="rounded-xl border border-[#2b2b2b] bg-[#141414]"
-      >
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 text-sm font-medium text-white [&::-webkit-details-marker]:hidden">
-          Dados para recuperação (obrigatório)
-          <span aria-hidden="true" className="text-[#C8FF00]">⌄</span>
-        </summary>
-        <div className="space-y-4 border-t border-[#2b2b2b] p-4">
-          <p className="text-xs leading-5 text-[#a6a6a6]">
-            Esses dados são necessários para redefinir a senha caso você perca o acesso.
-          </p>
-          <TextField
-            label="Pergunta de recuperação"
-            name="securityQuestion"
-            maxLength={200}
-            disabled={loading}
-            value={securityQuestion}
-            onChange={(event) => {
-              setSecurityQuestion(event.target.value);
-              setFieldErrors((current) => ({ ...current, securityQuestion: "" }));
-            }}
-            error={fieldErrors.securityQuestion}
-          />
-          <TextField
-            label="Resposta de recuperação"
-            name="securityAnswer"
-            maxLength={120}
-            autoComplete="off"
-            disabled={loading}
-            value={securityAnswer}
-            onChange={(event) => {
-              setSecurityAnswer(event.target.value);
-              setFieldErrors((current) => ({ ...current, securityAnswer: "" }));
-            }}
-            error={fieldErrors.securityAnswer}
-          />
-          <TextField
-            label="Confirmar resposta"
-            name="confirmSecurityAnswer"
-            maxLength={120}
-            autoComplete="off"
-            disabled={loading}
-            value={confirmSecurityAnswer}
-            onChange={(event) => {
-              setConfirmSecurityAnswer(event.target.value);
-              setFieldErrors((current) => ({ ...current, confirmSecurityAnswer: "" }));
-            }}
-            error={fieldErrors.confirmSecurityAnswer}
-          />
-        </div>
-      </details>
 
       <Button type="submit" loading={loading} className={buttonClass}>
         Criar conta
